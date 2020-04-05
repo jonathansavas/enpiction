@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tuple/tuple.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -65,7 +66,7 @@ class HomePage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => EncryptPage())
+                      MaterialPageRoute(builder: (context) => EncryptChoosePage())
                     );
                   },
                   child: Text(
@@ -89,12 +90,30 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class EncryptPageState extends State<EncryptPage> {
+class EncryptChoosePageState extends State<EncryptChoosePage> {
+  final _maxEntries = 5;
   final _encryptEntries = <Tuple2<String, String>>[];
   final _left = true;
   final _right = false;
-  final _textController = TextEditingController();
+  final  _textController = TextEditingController();
+  FocusNode _textFieldFocus;
+  bool _isFocusOnTextField = false;
+  bool _isEncryptButtonClicked = false;
   File _image;
+  
+  @override
+  void initState() {
+    super.initState();
+    _textFieldFocus = FocusNode();
+    _textFieldFocus.addListener(_handleTextFieldFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _textFieldFocus.dispose();
+    super.dispose();
+  }
 
   bool _isNextEnabled() {
     return _image != null && _textController.text.length > 0;
@@ -107,6 +126,14 @@ class EncryptPageState extends State<EncryptPage> {
       _image = image;
     });
   }
+  
+  void _handleTextFieldFocusChange() {
+    if (_textFieldFocus.hasFocus != _isFocusOnTextField) {
+      setState(() {
+        _isFocusOnTextField = _textFieldFocus.hasFocus;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,20 +142,42 @@ class EncryptPageState extends State<EncryptPage> {
       appBar: AppBar(
         title: Text('Encrypt'),
       ),
-      body: Stack(
-          children: <Widget>[
-            _imageWidget(),
-            _inputTextField(),
-            _bottomCornerButton(_left, 'Cancel', () => Navigator.pop(context)),
-            _bottomCornerButton(_right, 'Next', _isNextEnabled() ? _saveEncryptionEntry : () => {}),
-          ],
-      )
+      body: _isEncryptButtonClicked ? _encryptQuestionWidget() : _mainEncryptPageWidget()
     );
   }
 
+  Widget _mainEncryptPageWidget() {
+    var _widgetStack = <Widget>[
+      _imageWidget(),
+      _inputTextField(_isFocusOnTextField),
+      _encryptFloatingButton(),
+      _bottomCornerButton(_left, 'Cancel', () => Navigator.pop(context)),
+    ];
+
+    if (_encryptEntries.length < _maxEntries - 1) {
+      _widgetStack.add(
+          _bottomCornerButton(_right, 'Next', _isNextEnabled() ? _nextButtonAction : () => {})
+      );
+    }
+
+    return ! _isFocusOnTextField
+        ? Stack(
+            children: _widgetStack
+          )
+        : Stack(
+            children: <Widget>[
+              _inputTextField(_isFocusOnTextField),
+            ]
+        );
+  }
+
   void _saveEncryptionEntry() {
+    _encryptEntries.add(Tuple2<String, String>(_image.path, _textController.text));
+  }
+
+  void _nextButtonAction() {
     setState(() {
-      _encryptEntries.add(Tuple2<String, String>(_image.path, _textController.text));
+      _saveEncryptionEntry();
       _textController.clear();
       _image = null;
     });
@@ -145,6 +194,7 @@ class EncryptPageState extends State<EncryptPage> {
                   label: Text('Choose an image'),
                   backgroundColor: Colors.pink,
                   icon: Icon(Icons.image),
+                  heroTag: null,
                 )
               ),
               SizedBox(height: MediaQuery.of(context).size.height * 0.10),
@@ -195,16 +245,83 @@ class EncryptPageState extends State<EncryptPage> {
     );
   }
 
-  Widget _inputTextField() {
+  Widget _encryptFloatingButton() {
     return Align(
-      alignment: Alignment(0.0, 0.0),
+      alignment: Alignment(0.0, 0.5),
+      child: FloatingActionButton.extended(
+          onPressed: _isNextEnabled()
+              ? _encryptButtonAction
+              : () => {},
+          label: Text('Encrypt'),
+          backgroundColor: Colors.cyan,
+          icon: Icon(Icons.lock),
+          heroTag: null,
+      ),
+    );
+  }
+
+  void _encryptButtonAction() {
+    setState(() {
+      _isEncryptButtonClicked = true;
+    });
+  }
+
+  Widget _encryptQuestionWidget() {
+    final _len = _encryptEntries.length + 1;
+    return Scaffold(
+      body: Center(
+        child: IntrinsicWidth(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                'Encrypt and hide\n       ' + _len.toString() + ' entr' + (_len == 1 ? 'y' : 'ies') + '?',
+                style: Theme.of(context).textTheme.title,
+              ),
+              SizedBox(height: Theme.of(context).buttonTheme.height),
+              RaisedButton(
+                onPressed: () {
+                  _saveEncryptionEntry();
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  'Encrypt!',
+                  style: Theme.of(context).textTheme.button.copyWith(color: Colors.white),
+                ),
+              ),
+              SizedBox(height: Theme.of(context).buttonTheme.height  / 1.5),
+              RaisedButton(
+                onPressed: () {
+                  setState(() {
+                    _isEncryptButtonClicked = false;
+                  });
+                },
+                child: Text(
+                  'Go back',
+                  style: Theme.of(context).textTheme.button.copyWith(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _inputTextField(bool hasFocus) {
+    return Align(
+      alignment: hasFocus ? Alignment(0.0, -0.7): Alignment(0.0, 0.0),
       child: Container(
         width: 350.0,
         child: TextField(
+          autofocus: hasFocus, // not working as expected
+          focusNode: _textFieldFocus,
           controller: _textController,
+          inputFormatters: [WhitelistingTextInputFormatter(RegExp("[\x00-\x7F]"))],
           keyboardType: TextInputType.multiline,
           maxLines: null,
-          maxLength: 256,
+          maxLength: 128,
           autocorrect: false,
           textAlign: TextAlign.center,
           minLines: 1,
@@ -219,8 +336,9 @@ class EncryptPageState extends State<EncryptPage> {
   }
 }
 
-class EncryptPage extends StatefulWidget {
+class EncryptChoosePage extends StatefulWidget {
   @override
-  EncryptPageState createState() => EncryptPageState();
+  EncryptChoosePageState createState() => EncryptChoosePageState();
 }
+
 
