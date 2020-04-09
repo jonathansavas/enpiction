@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:async';
 
+import 'package:enpiction/decrypt.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tuple/tuple.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 void main() => runApp(EnpictionApp());
 
@@ -40,8 +41,9 @@ class EnpictionApp extends StatelessWidget {
         ),
         home: HomePage(),
         routes: {
-          '/encryptChoose': (context) => EncryptChoosePage(),
-          '/encryptSubmitKey': (context) => EncryptSubmitKeyPage(),
+          EncryptChoosePage.routeName: (context) => EncryptChoosePage(),
+          EncryptSubmitKeyPage.routeName: (context) => EncryptSubmitKeyPage(),
+          DecryptChoosePage.routeName: (context) => DecryptChoosePage(),
         },
       ),
     );
@@ -127,10 +129,43 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
     return _image != null && _textController.text.length > 0;
   }
 
+  Future<void> _showImageAlreadyChosenDialog() async {
+    return showDialog<void> (
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text("Invalid image:"),
+          content: new Text("This image has already been chosen"),
+          actions: <Widget>[
+            new FlatButton(
+                onPressed: () { Navigator.of(context).pop(); },
+                child: new Text("Ok")
+            )
+          ],
+        );
+      }
+    );
+  }
+
+  bool _encryptEntriesContainsFile(String filePath) {
+    for (Tuple2<String, String> entry in _encryptEntries) {
+      if (filePath == entry.item1)
+        return true;
+    }
+
+    return false;
+  }
+
   Future getImage() async {
     String text = _textController.text;
 
-    var image = await ImagePicker.pickImage(source: ImageSource.gallery);
+    var image = await FilePicker.getFile(type: FileType.image);
+
+    if (_encryptEntriesContainsFile(image.path)) {
+      image = null;
+      await _showImageAlreadyChosenDialog();
+    }
 
     setState(() {
       _image = image;
@@ -247,7 +282,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
                 height: MediaQuery.of(context).size.height * 0.3,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                  image: AssetImage(_image.path)
+                    image: FileImage(_image)
                   )
                 ),
               ),
@@ -306,7 +341,10 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
   Widget _encryptQuestionWidget() {
     final _len = _encryptEntries.length;
     return Scaffold(
-      body: Center(
+      body: ListView(
+        padding: EdgeInsets.all(50),
+        children: <Widget>[
+          Center(
         child: IntrinsicWidth(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -341,6 +379,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
             ],
           ),
         ),
+        )]
       ),
     );
   }
