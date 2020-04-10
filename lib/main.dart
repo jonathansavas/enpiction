@@ -72,6 +72,10 @@ class EnpictionApp extends StatelessWidget {
   static void returnHome(BuildContext context) {
     Navigator.popUntil(context, ModalRoute.withName(Navigator.defaultRouteName));
   }
+  
+  static String padEncryptionKey(String key) {
+    return key.padRight(16, '0');
+  }
 }
 
 class HomePage extends StatelessWidget {

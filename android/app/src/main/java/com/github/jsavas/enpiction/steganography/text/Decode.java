@@ -116,9 +116,10 @@ public class Decode {
       //removing start and end constants form message
 
       try {
-        messageDecodingStatus.setMessage(messageDecodingStatus.getMessage().substring(Utility.START_MESSAGE_COSTANT.length(), messageDecodingStatus.getMessage()
-          .length()
-          - Utility.END_MESSAGE_COSTANT.length()));
+        messageDecodingStatus.setMessage(
+          messageDecodingStatus.getMessage().substring(
+            Utility.START_MESSAGE_COSTANT.length(), messageDecodingStatus.getMessage().length() - Utility.END_MESSAGE_COSTANT.length())
+        );
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -144,9 +145,7 @@ public class Decode {
       bit.getPixels(pixels, 0, bit.getWidth(), 0, 0, bit.getWidth(),
         bit.getHeight());
 
-      byte[] b;
-
-      b = Utility.convertArray(pixels);
+      byte[] b = Utility.convertArray(pixels);
 
       decodeMessage(b, messageDecodingStatus);
 

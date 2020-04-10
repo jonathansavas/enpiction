@@ -30,6 +30,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tuple/tuple.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 
 
 class EncryptChoosePageState extends State<EncryptChoosePage> {
@@ -349,6 +351,7 @@ class EncryptChoosePage extends StatefulWidget {
 }
 
 class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
+  static const platform = const MethodChannel('com.github.jsavas/encode');
   final _textController = TextEditingController();
 
   @override
@@ -371,7 +374,7 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
         children: <Widget>[
           _inputKeyField(),
           SizedBox(height: Theme.of(context).buttonTheme.height / 1.5),
-          _encryptFloatingButton(context),
+          _encryptFloatingButton(context, encryptEntries),
         ],
       ),
     );
@@ -400,12 +403,45 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
     );
   }
 
-  Widget _encryptFloatingButton(BuildContext context) {
-    void buttonAction() {
+  Widget _encryptFloatingButton(BuildContext context, List<Tuple2<String, String>> encryptEntries) {
+    Future<void> _showEncodeResult(bool success) async {
+      return showDialog<void> (
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: new Text("Encoding result:"),
+              content: new Text(success.toString()),
+              actions: <Widget>[
+                new FlatButton(
+                    onPressed: () { Navigator.of(context).pop(); },
+                    child: new Text("Ok")
+                )
+              ],
+            );
+          }
+      );
+    }
+
+    Future buttonAction() async {
       setState((){});
 
-      if (_textController.text.length > 0)
+      if (_textController.text.length > 0) {
+        if (await Permission.storage.request().isGranted) {
+          Map<String, String> pathsToMessages = Map.fromEntries(
+              encryptEntries.map((t) => MapEntry(t.item1, t.item2))
+          );
+
+          String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
+
+          bool successfulEncoding = await _encodeInMessages(
+              pathsToMessages, encryptionKey);
+
+          await _showEncodeResult(successfulEncoding);
+        }
+
         EnpictionApp.returnHome(context);
+      }
     }
 
     return FloatingActionButton.extended(
@@ -415,6 +451,20 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
       icon: Icon(Icons.lock),
       heroTag: null,
     );
+  }
+
+  Future<bool> _encodeInMessages(Map<String, String> pathsToMessages, String encryptionKey) async {
+    final Map<String, Object> arguments = {
+      "pathsToMessages" : pathsToMessages,
+      "encryptionKey" : encryptionKey
+    };
+
+    try {
+      return await platform.invokeMethod("encode", arguments);
+    } on PlatformException catch (e) {
+      print(e.message);
+      return false;
+    }
   }
 }
 

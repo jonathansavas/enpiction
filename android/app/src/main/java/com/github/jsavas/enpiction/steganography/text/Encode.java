@@ -45,11 +45,11 @@ public class Encode {
    * This method represent the core of 2 bit Encoding
    *
    * @return : byte encoded pixel array
-   * @parameter :  integer_pixel_array {The integer RGB array}
-   * @parameter : image_columns {Image width}
-   * @parameter : image_rows {Image height}
-   * @parameter : messageEncodingStatus {object}
-   * @parameter : progressHandler {A handler interface, for the progress bar}
+   * @param  integer_pixel_array {The integer RGB array}
+   * @param image_columns {Image width}
+   * @param image_rows {Image height}
+   * @param messageEncodingStatus {object}
+   * @param progressHandler {A handler interface, for the progress bar}
    */
 
   private static byte[] encodeMessage(int[] integer_pixel_array, int image_columns, int image_rows,
@@ -83,12 +83,10 @@ public class Encode {
               % Utility.toShift.length]) & 0x3));// 6
 
             if (shiftIndex % Utility.toShift.length == 0) {
-
               messageEncodingStatus.incrementMessageIndex();
 
               if (progressHandler != null)
                 progressHandler.increment(1);
-
             }
 
             if (messageEncodingStatus.getCurrentMessageIndex() == messageEncodingStatus.getByteArrayMessage().length) {
@@ -105,13 +103,9 @@ public class Encode {
           }
 
           result[resultIndex++] = tmp;
-
         }
-
       }
-
     }
-
 
     return result;
 
@@ -121,9 +115,9 @@ public class Encode {
    * This method implements the above method on the list of chunk image list.
    *
    * @return : Encoded list of chunk images
-   * @parameter : splitted_images {list of chunk images}
-   * @parameter : encrypted_message {string}
-   * @parameter : progressHandler {Progress bar handler}
+   * @param splitted_images {list of chunk images}
+   * @param encrypted_message {string}
+   * @param progressHandler {Progress bar handler}
    */
   public static List<Bitmap> encodeMessage(List<Bitmap> splitted_images,
                                            String encrypted_message, ProgressHandler progressHandler) {
@@ -174,8 +168,8 @@ public class Encode {
         int[] oneDMod = Utility.byteArrayToIntArray(encodedImage);
 
         //creating bitmap from encrypted_image_array
-        Bitmap encoded_Bitmap = Bitmap.createBitmap(width, height,
-          Bitmap.Config.ARGB_8888);
+        Bitmap encoded_Bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+
         encoded_Bitmap.setDensity(density);
 
         int masterIndex = 0;

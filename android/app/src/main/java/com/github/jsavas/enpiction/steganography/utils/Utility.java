@@ -29,7 +29,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.Log;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -176,8 +176,8 @@ public class Utility {
   /**
    * Convert the byte array to an int.
    *
-   * @return : Integer
-   * @parameter :  b {the byte array}
+   * @return Integer
+   * @param  b {the byte array}
    */
   public static int byteArrayToInt(byte[] b) {
 
@@ -188,8 +188,8 @@ public class Utility {
   /**
    * Convert the byte array to an int starting from the given offset.
    *
-   * @return :  Integer
-   * @parameter :  b {the byte array}, offset {integer}
+   * @return  Integer
+   * @param  b {the byte array}, offset {integer}
    */
   private static int byteArrayToInt(byte[] b, int offset) {
 
@@ -209,8 +209,8 @@ public class Utility {
    * Convert integer array representing [argb] values to byte array
    * representing [rgb] values
    *
-   * @return : byte Array representing [rgb] values.
-   * @parameter : Integer array representing [argb] values.
+   * @return byte Array representing [rgb] values.
+   * @param  array representing [argb] values.
    */
   public static byte[] convertArray(int[] array) {
 
@@ -230,8 +230,7 @@ public class Utility {
   public static boolean isStringEmpty(String str) {
     boolean result = true;
 
-    if (str == null) ;
-    else {
+    if (str != null) {
       str = str.trim();
       if (str.length() > 0 && !str.equals("undefined"))
         result = false;
@@ -251,7 +250,7 @@ public class Utility {
     if (message != null) {
       message += END_MESSAGE_COSTANT;
       message = START_MESSAGE_COSTANT + message;
-      result = message.getBytes(Charset.forName("ISO-8859-1")).length * 4 / 3;
+      result = message.getBytes(StandardCharsets.ISO_8859_1).length * 4 / 3;
     }
 
     return result;
