@@ -120,7 +120,7 @@ public class ImageSteganography {
         try {
           decrypted_message = Crypto.decryptMessage(message, secret_key);
         } catch (Exception e) {
-          Log.d(TAG, "Error : " + e.getMessage() + " , may be due to wrong key.");
+          //Log.d(TAG, "Error : " + e.getMessage() + " , may be due to wrong key.");
         }
       } else {
         decrypted_message = message;
@@ -142,7 +142,7 @@ public class ImageSteganography {
       result = new StringBuilder(result.substring(0, 15));
     }
 
-    Log.d(TAG, "Secret Key Length : " + result.toString().getBytes().length);
+    //Log.d(TAG, "Secret Key Length : " + result.toString().getBytes().length);
 
     return result.toString();
   }

@@ -125,7 +125,7 @@ public class Utility {
       cols++;
 
     //create a bitmap of a size which can hold the complete image after merging
-    Log.d(TAG, "Size width " + original_width + " size height " + original_height);
+    //Log.d(TAG, "Size width " + original_width + " size height " + original_height);
     Bitmap bitmap = Bitmap.createBitmap(original_width, original_height, Bitmap.Config.ARGB_4444);
 
     //Creating canvas
@@ -150,17 +150,17 @@ public class Utility {
 
   public static int[] byteArrayToIntArray(byte[] b) {
 
-    Log.v("Size byte array", b.length + "");
+    //Log.v("Size byte array", b.length + "");
 
     int size = b.length / 3;
 
-    Log.v("Size Int array", size + "");
+    //Log.v("Size Int array", size + "");
 
     System.runFinalization();
     //Garbage collection
     System.gc();
 
-    Log.v("FreeMemory", Runtime.getRuntime().freeMemory() + "");
+    //Log.v("FreeMemory", Runtime.getRuntime().freeMemory() + "");
     int[] result = new int[size];
     int offset = 0;
     int index = 0;

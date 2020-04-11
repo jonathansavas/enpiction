@@ -26,6 +26,7 @@ package com.github.jsavas.enpiction.steganography;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import com.github.jsavas.enpiction.steganography.text.Decode;
 import com.github.jsavas.enpiction.steganography.text.Encode;
 import com.github.jsavas.enpiction.steganography.text.ImageSteganography;
@@ -86,12 +87,12 @@ public class StegFiles {
   }
 
   public static List<String> decodeAndValidate(List<String> filePaths, String encryptionKey) {
-    if (filePaths == null) return null;
+    if (filePaths == null) return new ArrayList<>();
 
     List<String> decodedMessages = decode(filePaths, encryptionKey);
 
     if (!validateDecodedSet(decodedMessages)) {
-      return null;
+      return new ArrayList<>();
     } else {
       List<String> originalMessages = new ArrayList<>();
 
@@ -109,7 +110,7 @@ public class StegFiles {
     for (String filepath : filePaths) {
       String message = decode(filepath, encryptionKey);
 
-      if (message == null) return null;
+      if (message == null || message.isEmpty()) return new ArrayList<>();
 
       messages.add(message);
     }
@@ -122,11 +123,11 @@ public class StegFiles {
 
     String message = ImageSteganography.decryptMessage(Decode.decodeMessage(Utility.splitImage(bitmap)), encryptionKey);
 
-    return Utility.isStringEmpty(message) ? null : message;
+    return Utility.isStringEmpty(message) ? "" : message;
   }
 
   public static boolean validateDecodedSet(List<String> decodedMessages) {
-    if (decodedMessages == null) return false;
+    if (decodedMessages == null || decodedMessages.isEmpty()) return false;
 
     int expectedSize = extractSize(decodedMessages.get(0));
     int actualSize = decodedMessages.size();

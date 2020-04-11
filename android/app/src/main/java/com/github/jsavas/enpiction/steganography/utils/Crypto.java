@@ -33,7 +33,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class Crypto {
 
-  private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
+  private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
   private static final String ALGORITHM = "AES";
 
   public static String encryptMessage(String message, String secret_key) throws Exception {
@@ -45,16 +45,16 @@ public class Crypto {
 
     byte[] encrypted = cipher.doFinal(message.getBytes());
 
-    Log.d("crypto", "Encrypted  in crypto (mine): " + Arrays.toString(encrypted) + "string: " + android.util.Base64.encodeToString(cipher.doFinal(message.getBytes()), 0));
+    //Log.d("crypto", "Encrypted  in crypto (mine): " + Arrays.toString(encrypted) + "string: " + android.util.Base64.encodeToString(cipher.doFinal(message.getBytes()), 0));
 
-    Log.d("crypto", "Encrypted  in crypto (theirs): " + Arrays.toString(cipher.doFinal(message.getBytes())) + "string : " + new String(encrypted));
+    //Log.d("crypto", "Encrypted  in crypto (theirs): " + Arrays.toString(cipher.doFinal(message.getBytes())) + "string : " + new String(encrypted));
 
     return android.util.Base64.encodeToString(cipher.doFinal(message.getBytes()), 0);
   }
 
   public static String decryptMessage(String encrypted_message, String secret_key) throws Exception {
 
-    Log.d("Decrypt", "message: + " + encrypted_message);
+    //Log.d("Decrypt", "message: + " + encrypted_message);
 
     SecretKeySpec aesKey = new SecretKeySpec(secret_key.getBytes(), ALGORITHM);
     Cipher cipher = Cipher.getInstance(TRANSFORMATION);

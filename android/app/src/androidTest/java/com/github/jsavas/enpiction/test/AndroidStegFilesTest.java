@@ -24,10 +24,6 @@
 
 package com.github.jsavas.enpiction.test;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.test.filters.SmallTest;
 import com.github.jsavas.enpiction.steganography.StegFiles;
 import org.junit.Assert;

@@ -106,7 +106,7 @@ public class TextDecoding extends AsyncTask<ImageSteganography, Void, ImageStega
       //decoding encrypted zipped message
       String decoded_message = Decode.decodeMessage(srcEncodedList);
 
-      Log.d(TAG, "Decoded_Message : " + decoded_message);
+      //Log.d(TAG, "Decoded_Message : " + decoded_message);
 
       //text decoded = true
       if (!Utility.isStringEmpty(decoded_message)) {
@@ -115,7 +115,7 @@ public class TextDecoding extends AsyncTask<ImageSteganography, Void, ImageStega
 
       //decrypting the encoded message
       String decrypted_message = ImageSteganography.decryptMessage(decoded_message, imageSteganography.getSecret_key());
-      Log.d(TAG, "Decrypted message : " + decrypted_message);
+      //Log.d(TAG, "Decrypted message : " + decrypted_message);
 
       //If decrypted_message is null it means that the secret key is wrong otherwise secret key is right.
       if (!Utility.isStringEmpty(decrypted_message)) {

@@ -39,6 +39,7 @@ class DecryptChoosePage extends StatefulWidget {
 }
 
 class DecryptChoosePageState extends State<DecryptChoosePage> {
+  static const platform = const MethodChannel('com.github.jsavas/decode');
   var _images = <File>[];
   final  _textController = TextEditingController();
 
@@ -151,11 +152,39 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
   }
 
   Widget _decryptFloatingButton(BuildContext context) {
-    void buttonAction() {
+    Future<void> _showDecodeResult(List<String> results) async {
+      return showDialog<void> (
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: new Text("Encoding result:"),
+              content: new Text(results.toString()),
+              actions: <Widget>[
+                new FlatButton(
+                    onPressed: () { Navigator.of(context).pop(); },
+                    child: new Text("Ok")
+                )
+              ],
+            );
+          }
+      );
+    }
+
+    void buttonAction() async {
       setState((){});
 
-      if (_isNextEnabled())
-        EnpictionApp.returnHome(context);
+      if (_isNextEnabled()) {
+        String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
+
+        List<String> filePaths = _images.map((i) => i.path).toList();
+
+        List<String> decodedMessages = await _decodeImages(filePaths, encryptionKey);
+
+        await _showDecodeResult(decodedMessages);
+      }
+
+      EnpictionApp.returnHome(context);
     }
 
     return Container(
@@ -168,5 +197,19 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
           heroTag: null,
         )
     );
+  }
+
+  Future<List<String>> _decodeImages(List<String> filePaths, String encryptionKey) async {
+    final Map<String, Object> arguments = {
+      "filePaths": filePaths,
+      "encryptionKey": encryptionKey
+    };
+
+    try {
+      return await platform.invokeListMethod("decodeAndValidate", arguments);
+    } on PlatformException catch (e) {
+      print(e.message);
+      return new List<String>();
+    }
   }
 }

@@ -144,7 +144,7 @@ public class Encode {
     }
 
     //Just a log to get the byte message length
-    Log.i(TAG, "Message length " + byte_encrypted_message.length);
+    //Log.i(TAG, "Message length " + byte_encrypted_message.length);
 
     for (Bitmap bitmap : splitted_images) {
 

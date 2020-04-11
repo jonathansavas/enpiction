@@ -120,7 +120,7 @@ public class TextEncoding extends AsyncTask<ImageSteganography, Integer, ImageSt
         public void setTotal(int tot) {
           maximumProgress = tot;
           progressDialog.setMax(maximumProgress);
-          Log.d(TAG, "Total Length : " + tot);
+          //Log.d(TAG, "Total Length : " + tot);
         }
 
         @Override
@@ -130,7 +130,7 @@ public class TextEncoding extends AsyncTask<ImageSteganography, Integer, ImageSt
 
         @Override
         public void finished() {
-          Log.d(TAG, "Message Encoding end....");
+          //Log.d(TAG, "Message Encoding end....");
           progressDialog.setIndeterminate(true);
         }
       });

@@ -1,17 +1,12 @@
 package com.github.jsavas.enpiction;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import com.github.jsavas.enpiction.steganography.StegFiles;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugins.GeneratedPluginRegistrant;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -50,12 +45,7 @@ public class MainActivity extends FlutterActivity {
               (List<String>) call.argument("filePaths"),
               call.argument("encryptionKey"));
 
-            if (messages != null) {
-              result.success(messages);
-            } else {
-              result.success(new ArrayList<>());
-            }
-
+            result.success(messages);
           } else {
             result.notImplemented();
           }

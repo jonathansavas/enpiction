@@ -74,7 +74,7 @@ public class Decode {
 
         if (messageDecodingStatus.getMessage().endsWith(Utility.END_MESSAGE_COSTANT)) {
 
-          Log.i("TEST", "Decoding ended");
+          //Log.i("TEST", "Decoding ended");
 
           //fixing ISO-8859-1 decoding
           byte[] temp = new byte[byte_encrypted_message.size()];
