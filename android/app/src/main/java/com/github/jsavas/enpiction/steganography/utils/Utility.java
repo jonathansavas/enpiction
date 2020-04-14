@@ -27,140 +27,97 @@ package com.github.jsavas.enpiction.steganography.utils;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.util.Log;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Utility {
-
-  private static final String TAG = Utility.class.getName();
-
-  //Taking the square block size constant
   public static final int SQUARE_BLOCK_SIZE = 512;
 
   public static final String END_MESSAGE_COSTANT = "#!@";
   public static final String START_MESSAGE_COSTANT = "@!#";
   public static final int[] toShift = {6, 4, 2, 0};
 
-  public static int squareBlockNeeded(int pixels) {
-    int result;
-
-    int quadratic = SQUARE_BLOCK_SIZE * SQUARE_BLOCK_SIZE;
-    int divisor = pixels / (quadratic);
-    int remainder = pixels % (quadratic);
-
-    result = divisor + (remainder > 0 ? 1 : 0);
-
-    return result;
-  }
-
   public static List<Bitmap> splitImage(Bitmap bitmap) {
-
-    //For height and width of the small image chunks
-    int chunkHeight, chunkWidth;
-
-    //To store all the small image chunks in bitmap format in this list
     ArrayList<Bitmap> chunkedImages = new ArrayList<>();
 
-    // Assume like a matrix in which the element is a Small Square block
-    //Rows and columns of that matrix
     int rows = bitmap.getHeight() / SQUARE_BLOCK_SIZE;
     int cols = bitmap.getWidth() / SQUARE_BLOCK_SIZE;
 
-    int chunk_height_mod = bitmap.getHeight() % SQUARE_BLOCK_SIZE;
-    int chunk_width_mod = bitmap.getWidth() % SQUARE_BLOCK_SIZE;
+    int chunkHeightMod = bitmap.getHeight() % SQUARE_BLOCK_SIZE;
+    int chunkWidthMod = bitmap.getWidth() % SQUARE_BLOCK_SIZE;
 
-    if (chunk_height_mod > 0)
+    if (chunkHeightMod > 0)
       rows++;
-    if (chunk_width_mod > 0)
+
+    if (chunkWidthMod > 0)
       cols++;
 
-
     //x_coordinate and y_coordinate are the pixel positions of the image chunks
-    int y_coordinate = 0;
+    int yCoordinate = 0;
 
     for (int x = 0; x < rows; x++) {
-
-      int x_coordinate = 0;
+      int xCoordinate = 0;
 
       for (int y = 0; y < cols; y++) {
 
-        chunkHeight = SQUARE_BLOCK_SIZE;
-        chunkWidth = SQUARE_BLOCK_SIZE;
+        int chunkHeight = SQUARE_BLOCK_SIZE;
+        int chunkWidth = SQUARE_BLOCK_SIZE;
 
-        if (y == cols - 1 && chunk_width_mod > 0)
-          chunkWidth = chunk_width_mod;
+        if (y == cols - 1 && chunkWidthMod > 0)
+          chunkWidth = chunkWidthMod;
 
-        if (x == rows - 1 && chunk_height_mod > 0)
-          chunkHeight = chunk_height_mod;
+        if (x == rows - 1 && chunkHeightMod > 0)
+          chunkHeight = chunkHeightMod;
 
-        //Adding chunk images to the list
-        chunkedImages.add(Bitmap.createBitmap(bitmap, x_coordinate, y_coordinate, chunkWidth, chunkHeight));
-        x_coordinate += SQUARE_BLOCK_SIZE;
-
+        chunkedImages.add(Bitmap.createBitmap(bitmap, xCoordinate, yCoordinate, chunkWidth, chunkHeight));
+        xCoordinate += SQUARE_BLOCK_SIZE;
       }
 
-      y_coordinate += SQUARE_BLOCK_SIZE;
+      yCoordinate += SQUARE_BLOCK_SIZE;
 
     }
 
-    //returning the list
     return chunkedImages;
   }
 
-  public static Bitmap mergeImage(List<Bitmap> images, int original_height, int original_width) {
+  public static Bitmap mergeImage(List<Bitmap> images, int originalHeight, int originalWidth) {
+    int rows = originalHeight / SQUARE_BLOCK_SIZE;
+    int cols = originalWidth / SQUARE_BLOCK_SIZE;
 
-    //Calculating number of Rows and columns of that matrix
-    int rows = original_height / SQUARE_BLOCK_SIZE;
-    int cols = original_width / SQUARE_BLOCK_SIZE;
+    int chunkHeightMod = originalHeight % SQUARE_BLOCK_SIZE;
+    int chunkWidthMod = originalWidth % SQUARE_BLOCK_SIZE;
 
-    int chunk_height_mod = original_height % SQUARE_BLOCK_SIZE;
-    int chunk_width_mod = original_width % SQUARE_BLOCK_SIZE;
-
-    if (chunk_height_mod > 0)
+    if (chunkHeightMod > 0)
       rows++;
-    if (chunk_width_mod > 0)
+
+    if (chunkWidthMod > 0)
       cols++;
 
     //create a bitmap of a size which can hold the complete image after merging
-    //Log.d(TAG, "Size width " + original_width + " size height " + original_height);
-    Bitmap bitmap = Bitmap.createBitmap(original_width, original_height, Bitmap.Config.ARGB_4444);
+    Bitmap bitmap = Bitmap.createBitmap(originalWidth, originalHeight, Bitmap.Config.ARGB_4444);
 
-    //Creating canvas
     Canvas canvas = new Canvas(bitmap);
 
     int count = 0;
 
     for (int irows = 0; irows < rows; irows++) {
       for (int icols = 0; icols < cols; icols++) {
-
-        //Drawing all the chunk images of canvas
         canvas.drawBitmap(images.get(count), (SQUARE_BLOCK_SIZE * icols), (SQUARE_BLOCK_SIZE * irows), new Paint());
         count++;
-
       }
     }
 
-    //returning bitmap
     return bitmap;
   }
 
 
   public static int[] byteArrayToIntArray(byte[] b) {
-
-    //Log.v("Size byte array", b.length + "");
-
     int size = b.length / 3;
 
-    //Log.v("Size Int array", size + "");
-
     System.runFinalization();
-    //Garbage collection
     System.gc();
 
-    //Log.v("FreeMemory", Runtime.getRuntime().freeMemory() + "");
     int[] result = new int[size];
     int offset = 0;
     int index = 0;
@@ -174,25 +131,12 @@ public class Utility {
   }
 
   /**
-   * Convert the byte array to an int.
-   *
-   * @return Integer
-   * @param  b {the byte array}
-   */
-  public static int byteArrayToInt(byte[] b) {
-
-    return byteArrayToInt(b, 0);
-
-  }
-
-  /**
    * Convert the byte array to an int starting from the given offset.
    *
    * @return  Integer
    * @param  b {the byte array}, offset {integer}
    */
   private static int byteArrayToInt(byte[] b, int offset) {
-
     int value = 0x00000000;
 
     for (int i = 0; i < 3; i++) {
@@ -200,9 +144,7 @@ public class Utility {
       value |= (b[i + offset] & 0x000000FF) << shift;
     }
 
-    value = value & 0x00FFFFFF;
-
-    return value;
+    return value & 0x00FFFFFF;
   }
 
   /**
@@ -234,23 +176,6 @@ public class Utility {
       str = str.trim();
       if (str.length() > 0 && !str.equals("undefined"))
         result = false;
-    }
-
-    return result;
-  }
-
-  /**
-   * Calculate the numbers of pixel needed
-   *
-   * @return : The number of pixel {integer}
-   * @parameter : message {Message to encode}
-   */
-  public static int numberOfPixelForMessage(String message) {
-    int result = -1;
-    if (message != null) {
-      message += END_MESSAGE_COSTANT;
-      message = START_MESSAGE_COSTANT + message;
-      result = message.getBytes(StandardCharsets.ISO_8859_1).length * 4 / 3;
     }
 
     return result;

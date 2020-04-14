@@ -24,45 +24,52 @@
 
 package com.github.jsavas.enpiction.steganography.utils;
 
-import android.util.Log;
-
-import java.util.Arrays;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.GeneralSecurityException;
 
 public class Crypto {
 
   private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
   private static final String ALGORITHM = "AES";
 
-  public static String encryptMessage(String message, String secret_key) throws Exception {
+  public static String encryptMessage(String message, String encryptionKey) {
+    if (message == null)
+      return "";
 
-    SecretKeySpec aesKey = new SecretKeySpec(secret_key.getBytes(), ALGORITHM);
-    Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+    if (Utility.isStringEmpty(encryptionKey))
+      return message;
 
-    cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+    try {
+      SecretKeySpec aesKey = new SecretKeySpec(encryptionKey.getBytes(), ALGORITHM);
+      Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+      cipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
-    byte[] encrypted = cipher.doFinal(message.getBytes());
-
-    //Log.d("crypto", "Encrypted  in crypto (mine): " + Arrays.toString(encrypted) + "string: " + android.util.Base64.encodeToString(cipher.doFinal(message.getBytes()), 0));
-
-    //Log.d("crypto", "Encrypted  in crypto (theirs): " + Arrays.toString(cipher.doFinal(message.getBytes())) + "string : " + new String(encrypted));
-
-    return android.util.Base64.encodeToString(cipher.doFinal(message.getBytes()), 0);
+      return android.util.Base64.encodeToString(cipher.doFinal(message.getBytes()), 0);
+    } catch (GeneralSecurityException e) {
+      e.printStackTrace();
+      return "";
+    }
   }
 
-  public static String decryptMessage(String encrypted_message, String secret_key) throws Exception {
+  public static String decryptMessage(String message, String encryptionKey) {
+    if (message == null)
+      return "";
 
-    //Log.d("Decrypt", "message: + " + encrypted_message);
+    if (Utility.isStringEmpty(encryptionKey))
+      return message;
 
-    SecretKeySpec aesKey = new SecretKeySpec(secret_key.getBytes(), ALGORITHM);
-    Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+    try {
+      SecretKeySpec aesKey = new SecretKeySpec(encryptionKey.getBytes(), ALGORITHM);
+      Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+      cipher.init(Cipher.DECRYPT_MODE, aesKey);
+      byte[] decoded = android.util.Base64.decode(message.getBytes(), 0);
 
-    cipher.init(Cipher.DECRYPT_MODE, aesKey);
-    byte[] decoded = android.util.Base64.decode(encrypted_message.getBytes(), 0);
-
-    return new String(cipher.doFinal(decoded));
+      return new String(cipher.doFinal(decoded));
+    } catch (GeneralSecurityException e) {
+      e.printStackTrace();
+      return "";
+    }
   }
 
 }

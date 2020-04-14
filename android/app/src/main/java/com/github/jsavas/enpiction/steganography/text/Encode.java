@@ -26,7 +26,6 @@ package com.github.jsavas.enpiction.steganography.text;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.util.Log;
 
 import com.github.jsavas.enpiction.steganography.utils.Utility;
 
@@ -36,156 +35,99 @@ import java.util.List;
 
 
 public class Encode {
-
-  private static final String TAG = Encode.class.getName();
-
   private static final int[] binary = {16, 8, 0};
 
   /**
    * This method represent the core of 2 bit Encoding
    *
    * @return : byte encoded pixel array
-   * @param  integer_pixel_array {The integer RGB array}
-   * @param image_columns {Image width}
-   * @param image_rows {Image height}
-   * @param messageEncodingStatus {object}
-   * @param progressHandler {A handler interface, for the progress bar}
+   * @param  integerPixelArray {The integer RGB array}
+   * @param imageColumns {Image width}
+   * @param imageRows {Image height}
+   * @param status {object}
    */
-
-  private static byte[] encodeMessage(int[] integer_pixel_array, int image_columns, int image_rows,
-                                      MessageEncodingStatus messageEncodingStatus, ProgressHandler progressHandler) {
+  private static byte[] encodeMessage(int[] integerPixelArray, int imageColumns, int imageRows,
+                                      MessageEncodingStatus status) {
 
     //denotes RGB channels
     int channels = 3;
-
     int shiftIndex = 4;
 
-    //creating result byte_array
-    byte[] result = new byte[image_rows * image_columns * channels];
+    byte[] result = new byte[imageRows * imageColumns * channels];
 
     int resultIndex = 0;
 
-    for (int row = 0; row < image_rows; row++) {
-
-      for (int col = 0; col < image_columns; col++) {
+    for (int row = 0; row < imageRows; row++) {
+      for (int col = 0; col < imageColumns; col++) {
 
         //2D matrix in 1D
-        int element = row * image_columns + col;
-
-        byte tmp;
+        int element = row * imageColumns + col;
 
         for (int channelIndex = 0; channelIndex < channels; channelIndex++) {
-
-          if (!messageEncodingStatus.isMessageEncoded()) {
+          if (!status.isMessageEncoded()) {
 
             // Shifting integer value by 2 in left and replacing the two least significant digits with the message_byte_array values..
-            tmp = (byte) ((((integer_pixel_array[element] >> binary[channelIndex]) & 0xFF) & 0xFC) | ((messageEncodingStatus.getByteArrayMessage()[messageEncodingStatus.getCurrentMessageIndex()] >> Utility.toShift[(shiftIndex++)
+            result[resultIndex++] = (byte) ((((integerPixelArray[element] >> binary[channelIndex]) & 0xFF) & 0xFC) | ((status.getByteArrayMessage()[status.getCurrentMessageIndex()] >> Utility.toShift[(shiftIndex++)
               % Utility.toShift.length]) & 0x3));// 6
 
             if (shiftIndex % Utility.toShift.length == 0) {
-              messageEncodingStatus.incrementMessageIndex();
-
-              if (progressHandler != null)
-                progressHandler.increment(1);
+              status.incrementMessageIndex();
             }
 
-            if (messageEncodingStatus.getCurrentMessageIndex() == messageEncodingStatus.getByteArrayMessage().length) {
-
-              messageEncodingStatus.setMessageEncoded();
-
-              if (progressHandler != null)
-                progressHandler.finished();
-
+            if (status.getCurrentMessageIndex() == status.getByteArrayMessage().length) {
+              status.setMessageEncoded();
             }
           } else {
             //Simply copy the integer to result array
-            tmp = (byte) ((((integer_pixel_array[element] >> binary[channelIndex]) & 0xFF)));
+            result[resultIndex++] = (byte) ((integerPixelArray[element] >> binary[channelIndex]) & 0xFF);
           }
-
-          result[resultIndex++] = tmp;
         }
       }
     }
 
     return result;
-
   }
 
   /**
    * This method implements the above method on the list of chunk image list.
    *
    * @return : Encoded list of chunk images
-   * @param splitted_images {list of chunk images}
-   * @param encrypted_message {string}
-   * @param progressHandler {Progress bar handler}
+   * @param imageSections {list of chunk images}
+   * @param encryptedMessage {string}
    */
-  public static List<Bitmap> encodeMessage(List<Bitmap> splitted_images,
-                                           String encrypted_message, ProgressHandler progressHandler) {
+  public static List<Bitmap> encodeMessage(List<Bitmap> imageSections,
+                                           String encryptedMessage) {
 
-    //Making result method
+    List<Bitmap> result = new ArrayList<>(imageSections.size());
 
-    List<Bitmap> result = new ArrayList<>(splitted_images.size());
+    MessageEncodingStatus message = new MessageEncodingStatus(
+      Utility.START_MESSAGE_COSTANT + encryptedMessage + Utility.END_MESSAGE_COSTANT);
 
-
-    //Adding start and end message constants to the encrypted message
-    encrypted_message = encrypted_message + Utility.END_MESSAGE_COSTANT;
-    encrypted_message = Utility.START_MESSAGE_COSTANT + encrypted_message;
-
-
-    //getting byte array from string
-    byte[] byte_encrypted_message = encrypted_message.getBytes(StandardCharsets.ISO_8859_1);
-
-    //Message Encoding Status
-    MessageEncodingStatus message = new MessageEncodingStatus(byte_encrypted_message, encrypted_message);
-
-    //Progress Handler
-    if (progressHandler != null) {
-      progressHandler.setTotal(encrypted_message.getBytes(StandardCharsets.ISO_8859_1).length);
-    }
-
-    //Just a log to get the byte message length
-    //Log.i(TAG, "Message length " + byte_encrypted_message.length);
-
-    for (Bitmap bitmap : splitted_images) {
-
+    for (Bitmap bitmap : imageSections) {
       if (!message.isMessageEncoded()) {
-
-        //getting bitmap height and width
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
 
-        //Making 1D integer pixel array
         int[] oneD = new int[width * height];
         bitmap.getPixels(oneD, 0, width, 0, 0, width, height);
 
-        //getting bitmap density
-        int density = bitmap.getDensity();
+        int[] oneDMod = Utility.byteArrayToIntArray(encodeMessage(oneD, width, height, message));
 
-        //encoding image
-        byte[] encodedImage = encodeMessage(oneD, width, height, message, progressHandler);
-
-        //converting byte_image_array to integer_array
-        int[] oneDMod = Utility.byteArrayToIntArray(encodedImage);
-
-        //creating bitmap from encrypted_image_array
-        Bitmap encoded_Bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-
-        encoded_Bitmap.setDensity(density);
+        Bitmap encodedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        encodedBitmap.setDensity(bitmap.getDensity());
 
         int masterIndex = 0;
 
-        //setting pixel values of above bitmap
         for (int j = 0; j < height; j++)
           for (int i = 0; i < width; i++) {
-
-            encoded_Bitmap.setPixel(i, j, Color.argb(0xFF,
+            encodedBitmap.setPixel(i, j,
+              Color.argb(0xFF,
               oneDMod[masterIndex] >> 16 & 0xFF,
               oneDMod[masterIndex] >> 8 & 0xFF,
               oneDMod[masterIndex++] & 0xFF));
-
           }
 
-        result.add(encoded_Bitmap);
+        result.add(encodedBitmap);
 
       } else {
         //Just add the image chunk to the result
@@ -200,25 +142,15 @@ public class Encode {
     private boolean messageEncoded;
     private int currentMessageIndex;
     private byte[] byteArrayMessage;
-    private String message;
 
-    MessageEncodingStatus(byte[] byteArrayMessage, String message) {
+    MessageEncodingStatus(String message) {
       this.messageEncoded = false;
       this.currentMessageIndex = 0;
-      this.byteArrayMessage = byteArrayMessage;
-      this.message = message;
+      this.byteArrayMessage = message.getBytes(StandardCharsets.ISO_8859_1);
     }
 
     void incrementMessageIndex() {
       currentMessageIndex++;
-    }
-
-    public String getMessage() {
-      return message;
-    }
-
-    public void setMessage(String message) {
-      this.message = message;
     }
 
     boolean isMessageEncoded() {
@@ -233,17 +165,10 @@ public class Encode {
       return currentMessageIndex;
     }
 
-    public void setCurrentMessageIndex(int currentMessageIndex) {
-      this.currentMessageIndex = currentMessageIndex;
-    }
-
     byte[] getByteArrayMessage() {
       return byteArrayMessage;
     }
 
-    public void setByteArrayMessage(byte[] byteArrayMessage) {
-      this.byteArrayMessage = byteArrayMessage;
-    }
   }
 
 }

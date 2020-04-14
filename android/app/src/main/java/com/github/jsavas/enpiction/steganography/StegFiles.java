@@ -26,10 +26,9 @@ package com.github.jsavas.enpiction.steganography;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.util.Log;
 import com.github.jsavas.enpiction.steganography.text.Decode;
 import com.github.jsavas.enpiction.steganography.text.Encode;
-import com.github.jsavas.enpiction.steganography.text.ImageSteganography;
+import com.github.jsavas.enpiction.steganography.utils.Crypto;
 import com.github.jsavas.enpiction.steganography.utils.Utility;
 
 import java.io.*;
@@ -67,7 +66,7 @@ public class StegFiles {
     int originalWidth = bitmap.getWidth();
 
     return Utility.mergeImage(
-      Encode.encodeMessage(Utility.splitImage(bitmap), ImageSteganography.encryptMessage(message, encryptionKey), null),
+      Encode.encodeMessage(Utility.splitImage(bitmap), Crypto.encryptMessage(message, encryptionKey)),
       originalHeight, originalWidth);
   }
 
@@ -110,7 +109,7 @@ public class StegFiles {
     for (String filepath : filePaths) {
       String message = decode(filepath, encryptionKey);
 
-      if (message == null || message.isEmpty()) return new ArrayList<>();
+      if (message.isEmpty()) return new ArrayList<>();
 
       messages.add(message);
     }
@@ -121,7 +120,7 @@ public class StegFiles {
   public static String decode(String filePath, String encryptionKey) {
     Bitmap bitmap = getImageBitmap(filePath);
 
-    String message = ImageSteganography.decryptMessage(Decode.decodeMessage(Utility.splitImage(bitmap)), encryptionKey);
+    String message = Crypto.decryptMessage(Decode.decodeMessage(Utility.splitImage(bitmap)), encryptionKey);
 
     return Utility.isStringEmpty(message) ? "" : message;
   }
