@@ -25,8 +25,11 @@ public class MainActivity extends FlutterActivity {
               (Map<String, String>) call.argument("pathsToMessages"),
               call.argument("encryptionKey"));
 
+            System.runFinalization();
+            System.gc();
+
             if (successfulEncoding) {
-              result.success(successfulEncoding);
+              result.success(true);
             } else {
               result.error("UNAVAILABLE", "Failed to encode messages", false);
             }
@@ -44,6 +47,9 @@ public class MainActivity extends FlutterActivity {
             List<String> messages = StegFiles.decodeAndValidate(
               (List<String>) call.argument("filePaths"),
               call.argument("encryptionKey"));
+
+            System.runFinalization();
+            System.gc();
 
             result.success(messages);
           } else {

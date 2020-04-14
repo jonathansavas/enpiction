@@ -40,7 +40,7 @@ import java.util.UUID;
 public class StegFiles {
   private static final int UUID_LENGTH = UUID.randomUUID().toString().length();
 
-  public static boolean encode(Map<String, String> pathsToMessages, String encryptionKey) {
+  public static boolean encode(Map<String, String> pathsToMessages, String key) {
     if (pathsToMessages == null) return false;
     int size = pathsToMessages.size();
 
@@ -52,21 +52,21 @@ public class StegFiles {
       String filePath = entry.getKey();
       String message = prefix + entry.getValue();
 
-      if (!saveFileToLocation(filePath, encode(filePath, message, encryptionKey)))
+      if (!saveFileToLocation(filePath, encode(filePath, message, key)))
         return false;
     }
 
     return true;
   }
 
-  public static Bitmap encode(String filePath, String message, String encryptionKey) {
+  public static Bitmap encode(String filePath, String message, String key) {
     Bitmap bitmap = getImageBitmap(filePath);
 
     int originalHeight = bitmap.getHeight();
     int originalWidth = bitmap.getWidth();
 
     return Utility.mergeImage(
-      Encode.encodeMessage(Utility.splitImage(bitmap), Crypto.encryptMessage(message, encryptionKey)),
+      Encode.encodeMessage(Utility.splitImage(bitmap), Crypto.encryptMessage(message, key)),
       originalHeight, originalWidth);
   }
 
@@ -85,10 +85,10 @@ public class StegFiles {
     return true;
   }
 
-  public static List<String> decodeAndValidate(List<String> filePaths, String encryptionKey) {
+  public static List<String> decodeAndValidate(List<String> filePaths, String key) {
     if (filePaths == null) return new ArrayList<>();
 
-    List<String> decodedMessages = decode(filePaths, encryptionKey);
+    List<String> decodedMessages = decode(filePaths, key);
 
     if (!validateDecodedSet(decodedMessages)) {
       return new ArrayList<>();
@@ -103,11 +103,11 @@ public class StegFiles {
     }
   }
 
-  public static List<String> decode(List<String> filePaths, String encryptionKey) {
+  public static List<String> decode(List<String> filePaths, String key) {
     List<String> messages = new ArrayList<>();
 
     for (String filepath : filePaths) {
-      String message = decode(filepath, encryptionKey);
+      String message = decode(filepath, key);
 
       if (message.isEmpty()) return new ArrayList<>();
 
@@ -117,12 +117,10 @@ public class StegFiles {
     return messages;
   }
 
-  public static String decode(String filePath, String encryptionKey) {
-    Bitmap bitmap = getImageBitmap(filePath);
+  public static String decode(String filePath, String key) {
+    List<Bitmap> bitmaps = Utility.splitImage(getImageBitmap(filePath));
 
-    String message = Crypto.decryptMessage(Decode.decodeMessage(Utility.splitImage(bitmap)), encryptionKey);
-
-    return Utility.isStringEmpty(message) ? "" : message;
+    return Crypto.decryptMessage(Decode.decodeMessage(bitmaps), key);
   }
 
   public static boolean validateDecodedSet(List<String> decodedMessages) {

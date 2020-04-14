@@ -115,9 +115,6 @@ public class Utility {
   public static int[] byteArrayToIntArray(byte[] b) {
     int size = b.length / 3;
 
-    System.runFinalization();
-    System.gc();
-
     int[] result = new int[size];
     int offset = 0;
     int index = 0;
@@ -170,14 +167,6 @@ public class Utility {
   }
 
   public static boolean isStringEmpty(String str) {
-    boolean result = true;
-
-    if (str != null) {
-      str = str.trim();
-      if (str.length() > 0 && !str.equals("undefined"))
-        result = false;
-    }
-
-    return result;
+    return str == null || str.isEmpty();
   }
 }

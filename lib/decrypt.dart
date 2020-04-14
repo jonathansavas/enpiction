@@ -152,17 +152,18 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
   }
 
   Widget _decryptFloatingButton(BuildContext context) {
-    Future<void> _showDecodeResult(List<String> results) async {
+
+    Future<void> _showDecodeFailureAlert() async {
       return showDialog<void> (
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: new Text("Encoding result:"),
-              content: new Text(results.toString()),
+              title: new Text("Decoding result:"),
+              content: new Text("Failure"),
               actions: <Widget>[
                 new FlatButton(
-                    onPressed: () { Navigator.of(context).pop(); },
+                    onPressed: () { EnpictionApp.returnHome(context); },
                     child: new Text("Ok")
                 )
               ],
@@ -178,13 +179,18 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
         String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
 
         List<String> filePaths = _images.map((i) => i.path).toList();
-
         List<String> decodedMessages = await _decodeImages(filePaths, encryptionKey);
 
-        await _showDecodeResult(decodedMessages);
+        if (decodedMessages == null || decodedMessages.isEmpty) {
+          await _showDecodeFailureAlert();
+        } else {
+          Navigator.pushNamed(
+            context,
+            DecryptResultPage.routeName,
+            arguments: decodedMessages
+          );
+        }
       }
-
-      EnpictionApp.returnHome(context);
     }
 
     return Container(
@@ -212,4 +218,67 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
       return new List<String>();
     }
   }
+}
+
+class DecryptResultPage extends StatelessWidget {
+  static const routeName = '/decryptResult';
+
+  @override
+  Widget build(BuildContext context) {
+    List<String> results = ModalRoute.of(context).settings.arguments;
+
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('Decrypt'),
+          leading: Builder(
+            builder: (BuildContext context) {
+              return IconButton(
+                icon: const Icon(Icons.home),
+                onPressed: () => EnpictionApp.returnHome(context),
+              );
+            },
+          ),
+        ),
+        body: GridView.count(
+          primary: false,
+          padding: const EdgeInsets.all(20),
+          crossAxisSpacing: 10,
+          crossAxisCount: 2,
+          children: results.map(
+              (res) => _clickToRevealResult(context, results, results.indexOf(res))
+          ).toList(),
+        )
+    );
+  }
+
+  Widget _clickToRevealResult(BuildContext context, List<String> results, int index) {
+
+    Future<void> _revealResult() async {
+      return showDialog<void> (
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: new Text(results.elementAt(index)),
+              actions: <Widget>[
+                new FlatButton(
+                    onPressed: () { Navigator.of(context).pop(); },
+                    child: new Text("Hide")
+                )
+              ],
+            );
+          }
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      child: RaisedButton(
+        onPressed: () async { await _revealResult(); },
+        color: Colors.teal[(index + 1) * 100],
+        child: Text("Message " + (index + 1).toString()),
+      ),
+    );
+  }
+
 }

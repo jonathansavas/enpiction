@@ -405,13 +405,15 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
 
   Widget _encryptFloatingButton(BuildContext context, List<Tuple2<String, String>> encryptEntries) {
     Future<void> _showEncodeResult(bool success) async {
+      String message = success ? "Success!" : "Failure";
+
       return showDialog<void> (
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: new Text("Encoding result:"),
-              content: new Text(success.toString()),
+              title: new Text("Encoding complete:"),
+              content: new Text(message),
               actions: <Widget>[
                 new FlatButton(
                     onPressed: () { Navigator.of(context).pop(); },
@@ -434,8 +436,7 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
 
           String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
 
-          bool successfulEncoding = await _encodeInMessages(
-              pathsToMessages, encryptionKey);
+          bool successfulEncoding = await _encodeInMessages(pathsToMessages, encryptionKey);
 
           await _showEncodeResult(successfulEncoding);
         }

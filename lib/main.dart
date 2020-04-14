@@ -64,6 +64,7 @@ class EnpictionApp extends StatelessWidget {
           EncryptChoosePage.routeName: (context) => EncryptChoosePage(),
           EncryptSubmitKeyPage.routeName: (context) => EncryptSubmitKeyPage(),
           DecryptChoosePage.routeName: (context) => DecryptChoosePage(),
+          DecryptResultPage.routeName: (context) => DecryptResultPage(),
         },
       ),
     );

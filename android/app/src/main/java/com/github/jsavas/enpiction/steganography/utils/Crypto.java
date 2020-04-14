@@ -1,75 +1,125 @@
 /*
- * MIT License
+ * Apache License
+ * Version 2.0, January 2004
+ * http://www.apache.org/licenses/
  *
- * Copyright (c) 2018 Ayush Agarwal
+ * Copyright 2017 Patrick Favre-Bulle
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * THIS FILE HAS BEEN MODIFIED FROM THE ORIGINAL SOURCE AT:
+ *
+ *    https://github.com/patrickfav/armadillo/blob/master/armadillo/src/main/java/at/favre/lib/armadillo/AesGcmEncryption.java
+ *    commit 1782bd7847943fca749590852596e2cbecd2dc22
  */
 
 package com.github.jsavas.enpiction.steganography.utils;
 
+import android.util.Base64;
+
 import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 public class Crypto {
 
-  private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
+  private static final String TRANSFORMATION = "AES/GCM/NoPadding";
   private static final String ALGORITHM = "AES";
+  private static final int IV_LENGTH = 12;
+  private static final int TAG_LEN_BITS = 128;
 
-  public static String encryptMessage(String message, String encryptionKey) {
+  private static final SecureRandom secureRandom = new SecureRandom();
+
+  private static Cipher cipher;
+
+  public static String encryptMessage(String message, String key) {
     if (message == null)
       return "";
 
-    if (Utility.isStringEmpty(encryptionKey))
+    if (Utility.isStringEmpty(key))
       return message;
 
-    try {
-      SecretKeySpec aesKey = new SecretKeySpec(encryptionKey.getBytes(), ALGORITHM);
-      Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-      cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+    byte[] iv = new byte[IV_LENGTH];
+    secureRandom.nextBytes(iv);
+    byte[] cipherText = null;
 
-      return android.util.Base64.encodeToString(cipher.doFinal(message.getBytes()), 0);
+    try {
+      instantiateCipher();
+      cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key.getBytes(), ALGORITHM), new GCMParameterSpec(TAG_LEN_BITS, iv));
+      cipherText = cipher.doFinal(message.getBytes());
+
+      return Base64.encodeToString(
+        ByteBuffer.allocate(1 + iv.length + cipherText.length)
+          .put((byte) iv.length)
+          .put(iv)
+          .put(cipherText)
+          .array(), 0);
+
     } catch (GeneralSecurityException e) {
       e.printStackTrace();
       return "";
+    } finally {
+      overwriteBytes(iv);
+      overwriteBytes(cipherText);
     }
   }
 
-  public static String decryptMessage(String message, String encryptionKey) {
+  public static String decryptMessage(String message, String key) {
     if (message == null)
       return "";
 
-    if (Utility.isStringEmpty(encryptionKey))
+    if (Utility.isStringEmpty(key))
       return message;
 
-    try {
-      SecretKeySpec aesKey = new SecretKeySpec(encryptionKey.getBytes(), ALGORITHM);
-      Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-      cipher.init(Cipher.DECRYPT_MODE, aesKey);
-      byte[] decoded = android.util.Base64.decode(message.getBytes(), 0);
+    ByteBuffer buffer = ByteBuffer.wrap(Base64.decode(message.getBytes(), 0));
 
-      return new String(cipher.doFinal(decoded));
+    int ivLen = buffer.get();
+    if (ivLen < 12 || ivLen >= 16)
+      return "";
+
+    byte[] iv = new byte[ivLen];
+    buffer.get(iv);
+
+    byte[] cipherText = new byte[buffer.remaining()];
+    buffer.get(cipherText);
+
+    try {
+      instantiateCipher();
+      cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key.getBytes(), ALGORITHM), new GCMParameterSpec(TAG_LEN_BITS, iv));
+
+      return new String(cipher.doFinal(cipherText));
     } catch (GeneralSecurityException e) {
       e.printStackTrace();
       return "";
+    } finally {
+      overwriteBytes(iv);
+      overwriteBytes(cipherText);
     }
+  }
+
+  private static void overwriteBytes(byte[] bytes) {
+    if (bytes != null && bytes.length > 0)
+      secureRandom.nextBytes(bytes);
+  }
+
+  private static void instantiateCipher() throws NoSuchPaddingException, NoSuchAlgorithmException {
+    if (cipher == null)
+      cipher = Cipher.getInstance(TRANSFORMATION);
   }
 
 }
