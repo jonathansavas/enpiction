@@ -26,6 +26,7 @@ dependencies:
   tuple: ^1.0.3
   file_picker: ^1.6.0
   permission_handler: ^5.0.0+hotfix.3
+  progress_dialog: ^1.2.2
 
 dev_dependencies:
   flutter_test:

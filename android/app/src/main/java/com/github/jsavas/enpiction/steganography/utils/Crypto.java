@@ -32,7 +32,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
@@ -70,8 +69,7 @@ public class Crypto {
           .put(cipherText)
           .array(), 0);
 
-    } catch (GeneralSecurityException e) {
-      e.printStackTrace();
+    } catch (Exception e) {
       return "";
     } finally {
       overwriteBytes(iv);
@@ -86,25 +84,27 @@ public class Crypto {
     if (Utility.isStringEmpty(key))
       return message;
 
-    ByteBuffer buffer = ByteBuffer.wrap(Base64.decode(message.getBytes(), 0));
-
-    int ivLen = buffer.get();
-    if (ivLen < 12 || ivLen >= 16)
-      return "";
-
-    byte[] iv = new byte[ivLen];
-    buffer.get(iv);
-
-    byte[] cipherText = new byte[buffer.remaining()];
-    buffer.get(cipherText);
+    byte[] iv = null;
+    byte[] cipherText = null;
 
     try {
+      ByteBuffer buffer = ByteBuffer.wrap(Base64.decode(message.getBytes(), 0));
+
+      int ivLen = buffer.get();
+      if (ivLen < 12 || ivLen >= 16)
+        return "";
+
+      iv = new byte[ivLen];
+      buffer.get(iv);
+
+      cipherText = new byte[buffer.remaining()];
+      buffer.get(cipherText);
+
       instantiateCipher();
       cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key.getBytes(), ALGORITHM), new GCMParameterSpec(TAG_LEN_BITS, iv));
 
       return new String(cipher.doFinal(cipherText));
-    } catch (GeneralSecurityException e) {
-      e.printStackTrace();
+    } catch (Exception e) {
       return "";
     } finally {
       overwriteBytes(iv);

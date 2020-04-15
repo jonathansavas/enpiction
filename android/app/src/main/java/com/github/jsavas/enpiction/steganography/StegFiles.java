@@ -75,12 +75,18 @@ public class StegFiles {
   }
 
   private static boolean saveFileToLocation(String filePath, Bitmap bitmap) {
-    try (OutputStream fOut = new FileOutputStream(filePath)) {
+    File f = new File(filePath);
+    long lastModified = getLastModified(f);
+
+    try (OutputStream fOut = new FileOutputStream(f)) {
       bitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut);
     } catch (IOException e) {
       e.printStackTrace();
       return false;
     }
+
+    if (lastModified > 0)
+      setLastModified(lastModified, f);
 
     return true;
   }
@@ -155,5 +161,25 @@ public class StegFiles {
 
   public static String extractOriginalMessage(String message) {
     return message.substring(UUID_LENGTH + 1);
+  }
+
+  private static long getLastModified(File f) {
+    try {
+      return f.lastModified();
+    } catch (SecurityException e) {
+      return 0L;
+    }
+  }
+
+  private static boolean setLastModified(long time, File f) {
+    if (time < 0)
+      return false;
+
+    try {
+      return f.setLastModified(time);
+    } catch (SecurityException e) {
+      return false;
+    }
+
   }
 }

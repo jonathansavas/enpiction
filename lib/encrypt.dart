@@ -28,6 +28,7 @@ import 'dart:async';
 import 'package:enpiction/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 import 'package:tuple/tuple.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -117,11 +118,23 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
     }
   }
 
-  void goBackFromQuestion() {
+  void _goBackFromQuestion() {
     setState(() {
       _encryptEntries.removeLast();
       _isEncryptButtonClicked = false;
     });
+  }
+  
+  void _goToPreviousChoice() {
+    if (_encryptEntries.length == 0) {
+      EnpictionApp.returnHome(context);
+    } else {
+      setState(() {
+        var lastEntry = _encryptEntries.removeLast();
+        _image = File(lastEntry.item1);
+        _textController.text = lastEntry.item2;
+      });
+    }
   }
 
   @override
@@ -134,7 +147,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
             leading: Builder(
               builder: (BuildContext context) {
                 return BackButton(
-                  onPressed: goBackFromQuestion,
+                  onPressed: _goBackFromQuestion,
                 );
               },
             ),
@@ -146,6 +159,13 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
           resizeToAvoidBottomInset: true,
           appBar: AppBar(
             title: Text('Encrypt'),
+            leading: Builder(
+              builder: (BuildContext context) {
+                return BackButton(
+                  onPressed: _goToPreviousChoice,
+                );
+              },
+            ),
           ),
           body: _mainEncryptPageWidget()
       );
@@ -172,7 +192,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
       if (_encryptEntries.length < _maxEntries - 1) {
         _widgetStack.add(
             _bottomCornerButton(
-                _right, 'Next', _isNextEnabled() ? _nextButtonAction : () => {})
+                _right, 'Add Image', _isNextEnabled() ? _addButtonAction : () => {})
         );
       }
     }
@@ -184,7 +204,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
     _encryptEntries.add(Tuple2<String, String>(_image.path, _textController.text));
   }
 
-  void _nextButtonAction() {
+  void _addButtonAction() {
     setState(() {
       _saveEncryptionEntry();
       _textController.clear();
@@ -304,7 +324,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
                     ),
                     SizedBox(height: Theme.of(context).buttonTheme.height  / 1.5),
                     RaisedButton(
-                      onPressed: goBackFromQuestion,
+                      onPressed: _goBackFromQuestion,
                       child: Text(
                         'Go back',
                         style: Theme.of(context).textTheme.button.copyWith(color: Colors.white),
@@ -353,6 +373,9 @@ class EncryptChoosePage extends StatefulWidget {
 class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
   static const platform = const MethodChannel('com.github.jsavas/encode');
   final _textController = TextEditingController();
+  List<Tuple2<String, String>> _encryptEntries;
+  ProgressDialog busyDialog;
+
 
   @override
   void dispose() {
@@ -362,21 +385,36 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Tuple2<String, String>> encryptEntries = ModalRoute.of(context).settings.arguments;
+
+    if (_encryptEntries == null) {
+      _encryptEntries = ModalRoute
+          .of(context)
+          .settings
+          .arguments;
+    }
+
+    if (busyDialog == null) {
+      busyDialog = ProgressDialog(context);
+      busyDialog.style(message: "Encrypting...");
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
           title: Text('Encrypt')
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(50),
-        children: <Widget>[
-          _inputKeyField(),
-          SizedBox(height: Theme.of(context).buttonTheme.height / 1.5),
-          _encryptFloatingButton(context, encryptEntries),
-        ],
-      ),
+      body: _mainListView(),
+    );
+  }
+
+  Widget _mainListView() {
+    return ListView(
+      padding: const EdgeInsets.all(50),
+      children: <Widget>[
+        _inputKeyField(),
+        SizedBox(height: Theme.of(context).buttonTheme.height / 1.5),
+        _encryptFloatingButton(context),
+      ],
     );
   }
 
@@ -403,7 +441,7 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
     );
   }
 
-  Widget _encryptFloatingButton(BuildContext context, List<Tuple2<String, String>> encryptEntries) {
+  Widget _encryptFloatingButton(BuildContext context) {
     Future<void> _showEncodeResult(bool success) async {
       String message = success ? "Success!" : "Failure";
 
@@ -416,7 +454,7 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
               content: new Text(message),
               actions: <Widget>[
                 new FlatButton(
-                    onPressed: () { Navigator.of(context).pop(); },
+                    onPressed: () { EnpictionApp.returnHome(context); },
                     child: new Text("Ok")
                 )
               ],
@@ -430,18 +468,19 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
 
       if (_textController.text.length > 0) {
         if (await Permission.storage.request().isGranted) {
+          busyDialog.show();
+
           Map<String, String> pathsToMessages = Map.fromEntries(
-              encryptEntries.map((t) => MapEntry(t.item1, t.item2))
+              _encryptEntries.map((t) => MapEntry(t.item1, t.item2))
           );
 
           String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
-
           bool successfulEncoding = await _encodeInMessages(pathsToMessages, encryptionKey);
 
+          await Future.delayed(Duration(seconds: 1)).then((v) {});
+          await busyDialog.hide();
           await _showEncodeResult(successfulEncoding);
         }
-
-        EnpictionApp.returnHome(context);
       }
     }
 
@@ -461,7 +500,7 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
     };
 
     try {
-      return await platform.invokeMethod("encode", arguments);
+      return platform.invokeMethod("encode", arguments);
     } on PlatformException catch (e) {
       print(e.message);
       return false;

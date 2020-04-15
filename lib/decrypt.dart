@@ -28,6 +28,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 
 import 'main.dart';
 
@@ -42,6 +43,7 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
   static const platform = const MethodChannel('com.github.jsavas/decode');
   var _images = <File>[];
   final  _textController = TextEditingController();
+  ProgressDialog busyDialog;
 
   @override
   void dispose() {
@@ -55,6 +57,11 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (busyDialog == null) {
+      busyDialog = ProgressDialog(context);
+      busyDialog.style(message: "Decrypting...");
+    }
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(title: Text('Decrypt')),
@@ -159,8 +166,7 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
           barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: new Text("Decoding result:"),
-              content: new Text("Failure"),
+              title: new Text("Decoding failure"),
               actions: <Widget>[
                 new FlatButton(
                     onPressed: () { EnpictionApp.returnHome(context); },
@@ -176,10 +182,14 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
       setState((){});
 
       if (_isNextEnabled()) {
-        String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
+        busyDialog.show();
 
+        String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
         List<String> filePaths = _images.map((i) => i.path).toList();
         List<String> decodedMessages = await _decodeImages(filePaths, encryptionKey);
+
+        await Future.delayed(Duration(seconds: 1)).then((v) {});
+        await busyDialog.hide();
 
         if (decodedMessages == null || decodedMessages.isEmpty) {
           await _showDecodeFailureAlert();
@@ -212,7 +222,7 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
     };
 
     try {
-      return await platform.invokeListMethod("decodeAndValidate", arguments);
+      return platform.invokeListMethod("decodeAndValidate", arguments);
     } on PlatformException catch (e) {
       print(e.message);
       return new List<String>();
