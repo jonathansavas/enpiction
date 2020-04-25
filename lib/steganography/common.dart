@@ -27,7 +27,7 @@ import 'package:image/image.dart';
 const endMessageToken = "#!@";
 const startMessageToken = "@!#";
 const toShift = [6, 4, 2, 0];
-const channelShifts = [16, 8, 0];
+const channelShifts = [24, 16, 8, 0];
 
 const _squareBlockSize = 512;
 

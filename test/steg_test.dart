@@ -37,4 +37,21 @@ void main() {
 
     expect(decodeMessage(encodeMessage(img, message)), equals(message));
   });
+
+  test('Do not change more pixels than necessary', () {
+    String message = 'msgxyz65*&';
+    int expectedChanges = ((message.length + startMessageToken.length + endMessageToken.length) * 4 / 3).ceil();
+
+    Image img = decodeImage(File('test/clean_image.png').readAsBytesSync());
+    Image after = encodeMessage(img, message);
+
+    int numChanges = 0;
+    for (int i = 0; i < img.length; i++) {
+      if (img[i] != after[i]) {
+        numChanges++;
+      }
+    }
+
+    expect(numChanges, equals(expectedChanges));
+  });
 }

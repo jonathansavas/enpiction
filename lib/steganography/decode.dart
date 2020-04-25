@@ -51,6 +51,11 @@ String _decodeMessage(Uint8List bytes, List<int> messageBytes) {
   int byteIndex = 0;
   
   while (byteIndex < bytes.length) {
+    if (byteIndex % channelShifts.length == 0) {
+      byteIndex++;
+      continue;
+    }
+
     int b = bytes[byteIndex++];
     
     // get last two bits from b
