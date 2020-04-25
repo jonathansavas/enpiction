@@ -22,57 +22,56 @@
  * SOFTWARE.
  */
 
-import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:enpiction/steganography/constants.dart';
+import 'package:enpiction/steganography/common.dart';
 import 'package:image/image.dart';
 
-const _ascii = AsciiCodec();
 final _andBytes = Uint8List.fromList([0xC0, 0x30, 0x0C, 0x03]);
-final _endTokenBytes = _ascii.encode(endMessageToken);
-final _startTokenBytes = _ascii.encode(startMessageToken);
+final _endTokenBytes = Uint8List.fromList(endMessageToken.codeUnits);
+final _startTokenBytes = Uint8List.fromList(startMessageToken.codeUnits);
 
-String decodeMessage(List<Image> encodedImages) {
-  _MessageDecodingStatus status = _MessageDecodingStatus();
+String decodeMessage(Image encodedImg) {
+  List<Image> encodedImgPieces = splitImage(encodedImg);
+  List<int> messageBytes = [];
 
-  for (Image img in encodedImages) {
-    _decodeMessage(_toByteList(img.data), status);
+  for (Image piece in encodedImgPieces) {
+    String message = _decodeMessage(_toByteList(piece.data), messageBytes);
 
-    if (status.getMessage() != null)
-      break;
+    if (message != null)
+      return message;
   }
 
-  return status.getMessage();
+  return null;
 }
 
-_decodeMessage(Uint8List bytes, _MessageDecodingStatus status) {
-  List<int> messageBytes = status.getMessageBytes();
-  
-  int shiftIndex = 4;
+String _decodeMessage(Uint8List bytes, List<int> messageBytes) {
+  int shiftIndex = 0;
   int tmp = 0x00;
   int byteIndex = 0;
   
-  while (status.getMessage() == null && byteIndex < bytes.length) {
+  while (byteIndex < bytes.length) {
     int b = bytes[byteIndex++];
     
     // get last two bits from b
-    tmp = tmp | ((b << toShift[shiftIndex % toShift.length]) & _andBytes[shiftIndex++ % toShift.length]);
+    tmp |= ((b << toShift[shiftIndex]) & _andBytes[shiftIndex]);
+
+    shiftIndex = (shiftIndex + 1) % toShift.length;
     
-    if (shiftIndex % toShift.length == 0) {
+    if (shiftIndex == 0) {
       if (_isDecodingEnded(messageBytes)) {
-        status.setMessage(String.fromCharCodes(
+        return String.fromCharCodes(
             messageBytes,
             _startTokenBytes.length,
-            messageBytes.length - _endTokenBytes.length)
-        );
+            messageBytes.length - _endTokenBytes.length);
       } else {
         messageBytes.add(tmp);
+        tmp = 0x00;
       }
-
-      tmp = 0x00;
     }
   }
+
+  return null;
 }
 
 bool _isDecodingEnded(List<int> messageBytes) {
@@ -94,21 +93,4 @@ Uint8List _toByteList(Uint32List ints) {
   return Uint8List.fromList(
       ints.expand((i) => channelShifts.map((c) => (i >> c) & 0xFF)).toList()
   );
-}
-
-class _MessageDecodingStatus {
-  String _message;
-  List<int> _messageBytes = [];
-
-  String getMessage() {
-    return _message;
-  }
-
-  void setMessage(String message) {
-    this._message = message;
-  }
-
-  List<int> getMessageBytes() {
-    return _messageBytes;
-  }
 }

@@ -22,33 +22,33 @@
  * SOFTWARE.
  */
 
-import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:enpiction/steganography/constants.dart';
+import 'package:enpiction/steganography/common.dart';
 import 'package:image/image.dart';
 
-List<Image> encodeMessage(List<Image> imageSections, String encryptedMessage) {
-  List<Image> results = List(imageSections.length);
+Image encodeMessage(Image img, String msg) {
+  List<Image> imgPieces = splitImage(img);
+  List<Image> results = [];
 
-  _MessageEncodingStatus status = _MessageEncodingStatus(startMessageToken + encryptedMessage + endMessageToken);
+  _MessageEncodingStatus status = _MessageEncodingStatus(startMessageToken + msg + endMessageToken);
 
-  for (Image img in imageSections) {
+  for (Image piece in imgPieces) {
     if (!status.isEncoded()) {
-      Uint32List pixels = _toIntList(_encodeMessage(img.data, img.width, img.height, status));
-      Image encodedImg = Image.fromBytes(img.width, img.height, pixels, format: Format.abgr);
+      Uint32List pixels = _toIntList(_encodeMessage(piece.data, piece.width, piece.height, status));
+      Image encodedImg = Image.fromBytes(piece.width, piece.height, pixels);
 
       results.add(encodedImg);
     } else {
-      results.add(Image.from(img));
+      results.add(Image.from(piece));
     }
   }
 
-  return results;
+  return mergeImages(results, img.width, img.height);
 }
 
 Uint8List _encodeMessage(Uint32List pixels, int imgCols, int imgRows, _MessageEncodingStatus status) {
-  int shiftIndex = 4;
+  int shiftIndex = 0;
   int bytesIndex = 0;
 
   Uint8List bytes = Uint8List(imgRows * imgCols * channelShifts.length);
@@ -57,11 +57,13 @@ Uint8List _encodeMessage(Uint32List pixels, int imgCols, int imgRows, _MessageEn
     for (int col = 0; col < imgCols; col++) {
       int element = row * imgCols + col;
 
-      for (int channel = 0; channel < channelShifts.length; channel++) {
+      for (int channel = 0; channel < channelShifts.length; channel++) { // TODO: this ignores the A channel, which is later added as 'ff'. Make this get the A channel and add
         if (!status.isEncoded()) {
-          bytes[bytesIndex++] = (((pixels[element] >> channelShifts[channel]) & 0xFF) & 0xFC) | ((status.getMessageBytes()[status.getMessageIndex()] >> toShift[(shiftIndex++) % toShift.length]) & 0x3);
+          bytes[bytesIndex++] = ((pixels[element] >> channelShifts[channel]) & 0xFC) | ((status.getMessageBytes()[status.getMessageIndex()] >> toShift[shiftIndex]) & 0x3);
 
-          if (shiftIndex % toShift.length == 0)
+          shiftIndex = (shiftIndex + 1) % toShift.length;
+
+          if (shiftIndex == 0)
             status.incrementMessageIndex();
 
           if (status.getMessageIndex() == status.getMessageBytes().length)
@@ -90,24 +92,23 @@ Uint32List _toIntList(Uint8List bytes) {
 }
 
 int _toInt(Uint8List bytes, int offset) {
-  int value = 0;
+  int value = 0xFF000000;
 
   for (int i = 0; i < 3; i++) {
     int shift = (2 - i) * 8;
     value |= (bytes[i + offset] & 0x000000FF) << shift;
   }
 
-  return value & 0x00FFFFFF;
+  return value;
 }
 
 class _MessageEncodingStatus {
-  static final _ascii = AsciiCodec();
   bool _isEncoded = false;
   int _messageIndex = 0;
   Uint8List _messageBytes;
 
   _MessageEncodingStatus(String message) {
-    this._messageBytes = _ascii.encode(message);
+    this._messageBytes = Uint8List.fromList(message.codeUnits);
   }
 
   void incrementMessageIndex() {
