@@ -195,7 +195,11 @@ class MessageFinder {
   final _endTokenBytes = Uint8List.fromList(endMessageToken.codeUnits);
   final _startTokenBytes = Uint8List.fromList(startMessageToken.codeUnits);
 
+  int _shiftIndex;
+
   String findMessage(Image img) {
+    _shiftIndex = 0;
+
     List<Image> imgPieces = splitImage(img);
     List<int> msgBytes = [];
 
@@ -210,7 +214,6 @@ class MessageFinder {
   }
 
   String _findMessage(Uint8List imgBytes, List<int> msgBytes) {
-    int shiftIndex = 0;
     int tmp = 0x00;
     int byteIndex = 0;
 
@@ -221,11 +224,11 @@ class MessageFinder {
       }
 
       // get last two bits and shift to appropriate bit position
-      tmp |= (imgBytes[byteIndex++] & 0x3) << msgByteShifts[shiftIndex];
+      tmp |= (imgBytes[byteIndex++] & 0x3) << msgByteShifts[_shiftIndex];
 
-      shiftIndex = (shiftIndex + 1) % msgByteShifts.length;
+      _shiftIndex = (_shiftIndex + 1) % msgByteShifts.length;
 
-      if (shiftIndex == 0) {
+      if (_shiftIndex == 0) {
         if (_isSearchEnded(msgBytes)) {
           return String.fromCharCodes(
               msgBytes,
