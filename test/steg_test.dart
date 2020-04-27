@@ -8,9 +8,7 @@
 import 'dart:io';
 
 import 'package:enpiction/steganography/crypto.dart';
-import 'package:enpiction/steganography/common.dart';
-import 'package:enpiction/steganography/decode.dart';
-import 'package:enpiction/steganography/encode.dart';
+import 'package:enpiction/steganography/steg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart';
 
@@ -35,7 +33,7 @@ void main() {
     String message = 'messagefkgjkjg8*&845jk';
     Image img = decodeImage(File('test/clean_image.png').readAsBytesSync());
 
-    expect(decodeMessage(encodeMessage(img, message)), equals(message));
+    expect(MessageFinder().findMessage(MessageHider().hideMessage(img, message)), equals(message));
   });
 
   test('Do not change more pixels than necessary', () {
@@ -43,7 +41,7 @@ void main() {
     int expectedChanges = ((message.length + startMessageToken.length + endMessageToken.length) * 4 / 3).ceil();
 
     Image img = decodeImage(File('test/clean_image.png').readAsBytesSync());
-    Image after = encodeMessage(img, message);
+    Image after = MessageHider().hideMessage(img, message);
 
     int numChanges = 0;
     for (int i = 0; i < img.length; i++) {

@@ -45,7 +45,7 @@ String encryptMessage(String msg, String key) {
   Uint8List iv;
   Uint8List cipherText;
   try {
-    iv = _secureBytes(_ivLen);
+    iv = getSecureBytes(_ivLen);
 
     _cipher.init(
         true,
@@ -65,8 +65,8 @@ String encryptMessage(String msg, String key) {
   } on Exception {
     return "";
   } finally {
-    _overwriteBytes(iv);
-    _overwriteBytes(cipherText);
+    overwriteBytes(iv);
+    overwriteBytes(cipherText);
   }
 }
 
@@ -97,7 +97,7 @@ String decryptMessage(String msg, String key) {
   } on Exception {
     return "";
   } finally {
-    _overwriteBytes(bytes);
+    overwriteBytes(bytes);
   }
 }
 
@@ -105,13 +105,13 @@ String _padKey(String key) {
   return key.padRight(16, '0');
 }
 
-Uint8List _secureBytes(int length) {
+Uint8List getSecureBytes(int length) {
   return Uint8List.fromList(
       List<int>.generate(length, (i) => _secureRan.nextInt(256))
   );
 }
 
-void _overwriteBytes(List<int> bytes) {
+void overwriteBytes(List<int> bytes) {
   if (bytes != null && bytes.isNotEmpty) {
     for (int i = 0; i < bytes.length; i++)
       bytes[i] = _secureRan.nextInt(256);
