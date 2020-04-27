@@ -59,7 +59,7 @@ String _decodeMessage(Uint8List bytes, List<int> messageBytes) {
     int b = bytes[byteIndex++];
     
     // get last two bits from b
-    tmp |= ((b << toShift[shiftIndex]) & _andBytes[shiftIndex]);
+    tmp |= b << toShift[shiftIndex] & _andBytes[shiftIndex];
 
     shiftIndex = (shiftIndex + 1) % toShift.length;
     

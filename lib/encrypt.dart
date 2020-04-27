@@ -29,7 +29,6 @@ import 'package:enpiction/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:progress_dialog/progress_dialog.dart';
-import 'package:tuple/tuple.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -37,7 +36,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 class EncryptChoosePageState extends State<EncryptChoosePage> {
   final _maxEntries = 5;
-  final _encryptEntries = <Tuple2<String, String>>[];
+  final _encryptEntries = <MapEntry<String, String>>[];
   final _left = true;
   final _right = false;
   final  _textController = TextEditingController();
@@ -84,8 +83,8 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
   }
 
   bool _encryptEntriesContainsFile(String filePath) {
-    for (Tuple2<String, String> entry in _encryptEntries) {
-      if (filePath == entry.item1)
+    for (MapEntry<String, String> entry in _encryptEntries) {
+      if (filePath == entry.key)
         return true;
     }
 
@@ -95,7 +94,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
   Future getImage() async {
     String text = _textController.text;
 
-    var image = await FilePicker.getFile(type: FileType.image);
+    var image = await FilePicker.getFile(type: FileType.image, allowedExtensions: ['png']);
 
     if (_encryptEntriesContainsFile(image.path)) {
       image = null;
@@ -131,8 +130,8 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
     } else {
       setState(() {
         var lastEntry = _encryptEntries.removeLast();
-        _image = File(lastEntry.item1);
-        _textController.text = lastEntry.item2;
+        _image = File(lastEntry.key);
+        _textController.text = lastEntry.value;
       });
     }
   }
@@ -201,7 +200,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
   }
 
   void _saveEncryptionEntry() {
-    _encryptEntries.add(Tuple2<String, String>(_image.path, _textController.text));
+    _encryptEntries.add(MapEntry(_image.path, _textController.text));
   }
 
   void _addButtonAction() {
@@ -373,7 +372,7 @@ class EncryptChoosePage extends StatefulWidget {
 class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
   static const platform = const MethodChannel('com.github.jsavas/encode');
   final _textController = TextEditingController();
-  List<Tuple2<String, String>> _encryptEntries;
+  List<MapEntry<String, String>> _encryptEntries;
   ProgressDialog busyDialog;
 
 
@@ -470,9 +469,7 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
         if (await Permission.storage.request().isGranted) {
           busyDialog.show();
 
-          Map<String, String> pathsToMessages = Map.fromEntries(
-              _encryptEntries.map((t) => MapEntry(t.item1, t.item2))
-          );
+          Map<String, String> pathsToMessages = Map.fromEntries(_encryptEntries);
 
           String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
           bool successfulEncoding = await _encodeInMessages(pathsToMessages, encryptionKey);

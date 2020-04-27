@@ -57,7 +57,7 @@ Uint8List _encodeMessage(Uint32List pixels, int imgCols, int imgRows, _MessageEn
     for (int col = 0; col < imgCols; col++) {
       int element = row * imgCols + col;
 
-      for (int channel = 0; channel < channelShifts.length; channel++) { // TODO: this ignores the A channel, which is later added as 'ff'. Make this get the A channel and add
+      for (int channel = 0; channel < channelShifts.length; channel++) {
         if (!status.isEncoded()) {
           if (channel == 0) {
             bytes[bytesIndex++] = (pixels[element] >> channelShifts[channel]) & 0xFF;
