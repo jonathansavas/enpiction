@@ -46,11 +46,11 @@ class MessageHider {
   int _shiftIndex = 0;
   Uint8List _msgBytes;
 
-  bool hideMessagesInFiles(Map<String, String> pathsToMessages, String key) {
+  Future<bool> hideMessagesInFiles(Iterable<MapEntry<String, String>> pathsToMessages, String key) async {
     if (pathsToMessages == null)
       return false;
 
-    for (MapEntry<String, String> m in pathsToMessages.entries) {
+    for (MapEntry<String, String> m in pathsToMessages) {
       if (path.extension(m.key).toLowerCase() != '.png')
         throw ArgumentError('Only support PNG files at this time');
     }
@@ -62,7 +62,7 @@ class MessageHider {
 
     String prefix = _uuid.v4() + groupSize.toString();
 
-    for (MapEntry<String, String> entry in pathsToMessages.entries) {
+    for (MapEntry<String, String> entry in pathsToMessages) {
       String filePath = entry.key;
       String msg = prefix + entry.value;
       Image img = hideMessage(
@@ -265,7 +265,7 @@ class MessageFinder {
     );
   }
 
-  List<String> findAndValidate(List<String> filePaths, String key) {
+  Future<List<String>> findAndValidate(List<String> filePaths, String key) async {
     if (filePaths == null)
       return [];
 
@@ -300,20 +300,20 @@ class MessageFinder {
     return messages;
   }
 
-  bool validateMessageSet(List<String> decodedMessages) {
-    if (decodedMessages == null || decodedMessages.isEmpty)
+  bool validateMessageSet(List<String> messages) {
+    if (messages == null || messages.isEmpty)
       return false;
 
-    int expectedSize = _extractGroupSize(decodedMessages.first);
-    int actualSize = decodedMessages.length;
+    int expectedSize = _extractGroupSize(messages.first);
+    int actualSize = messages.length;
 
     if (actualSize != expectedSize)
       return false;
 
-    String expectedUUID = _extractUUID(decodedMessages.first);
+    String expectedUUID = _extractUUID(messages.first);
 
     for (int i = 1; i < actualSize; i++) {
-      if (!decodedMessages.elementAt(i).startsWith(expectedUUID))
+      if (!messages.elementAt(i).startsWith(expectedUUID))
         return false;
     }
 

@@ -11,6 +11,7 @@ import 'package:enpiction/steganography/crypto.dart';
 import 'package:enpiction/steganography/steg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart';
+import 'package:uuid/uuid.dart';
 
 void main() {
   test('Crypto functions', () {
@@ -29,7 +30,7 @@ void main() {
     }
   });
 
-  test('Encode/decode message to/from image', () {
+  test('Hide/find messages in image', () {
     String message = 'messagefkgjkjg8*&845jk';
     Image img = decodeImage(File('test/clean_image.png').readAsBytesSync());
 
@@ -51,5 +52,24 @@ void main() {
     }
 
     expect(numChanges, equals(expectedChanges));
+  });
+
+  test('Validate message set', () {
+    final messageFinder = MessageFinder();
+
+    final messages = ['A', 'B', 'C', 'D'];
+
+    String uuid = Uuid().v4();
+    String prefix = uuid + messages.length.toString();
+    String invalidPrefix = Uuid().v4();
+
+    List<String> prefixedMessages = messages.map((m) => prefix + m).toList();
+    expect(messageFinder.validateMessageSet(prefixedMessages), equals(true));
+
+    List<String> invalid = [prefix + messages[0], prefix + messages[1], prefix + messages[2]];
+    expect(messageFinder.validateMessageSet(invalid), equals(false));
+
+    invalid.add(invalidPrefix + messages[3]);
+    expect(messageFinder.validateMessageSet(invalid), equals(false));
   });
 }

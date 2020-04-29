@@ -26,6 +26,7 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:enpiction/main.dart';
+import 'package:enpiction/steganography/steg.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:progress_dialog/progress_dialog.dart';
@@ -94,7 +95,7 @@ class EncryptChoosePageState extends State<EncryptChoosePage> {
   Future getImage() async {
     String text = _textController.text;
 
-    var image = await FilePicker.getFile(type: FileType.image, allowedExtensions: ['png']);
+    var image = await FilePicker.getFile(type: FileType.custom, allowedExtensions: ['png']);
 
     if (_encryptEntriesContainsFile(image.path)) {
       image = null;
@@ -370,7 +371,7 @@ class EncryptChoosePage extends StatefulWidget {
 }
 
 class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
-  static const platform = const MethodChannel('com.github.jsavas/encode');
+  final _messageHider = MessageHider();
   final _textController = TextEditingController();
   List<MapEntry<String, String>> _encryptEntries;
   ProgressDialog busyDialog;
@@ -441,7 +442,7 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
   }
 
   Widget _encryptFloatingButton(BuildContext context) {
-    Future<void> _showEncodeResult(bool success) async {
+    Future<void> _showFindResult(bool success) async {
       String message = success ? "Success!" : "Failure";
 
       return showDialog<void> (
@@ -469,14 +470,11 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
         if (await Permission.storage.request().isGranted) {
           busyDialog.show();
 
-          Map<String, String> pathsToMessages = Map.fromEntries(_encryptEntries);
-
-          String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
-          bool successfulEncoding = await _encodeInMessages(pathsToMessages, encryptionKey);
+          bool successfulHide = await _messageHider.hideMessagesInFiles(_encryptEntries, _textController.text);
 
           await Future.delayed(Duration(seconds: 1)).then((v) {});
           await busyDialog.hide();
-          await _showEncodeResult(successfulEncoding);
+          await _showFindResult(successfulHide);
         }
       }
     }
@@ -488,20 +486,6 @@ class EncryptSubmitKeyPageState extends State<EncryptSubmitKeyPage> {
       icon: Icon(Icons.lock),
       heroTag: null,
     );
-  }
-
-  Future<bool> _encodeInMessages(Map<String, String> pathsToMessages, String encryptionKey) async {
-    final Map<String, Object> arguments = {
-      "pathsToMessages" : pathsToMessages,
-      "encryptionKey" : encryptionKey
-    };
-
-    try {
-      return platform.invokeMethod("encode", arguments);
-    } on PlatformException catch (e) {
-      print(e.message);
-      return false;
-    }
   }
 }
 

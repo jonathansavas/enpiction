@@ -25,6 +25,7 @@
 import 'dart:io';
 import 'dart:async';
 
+import 'package:enpiction/steganography/steg.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
@@ -40,7 +41,7 @@ class DecryptChoosePage extends StatefulWidget {
 }
 
 class DecryptChoosePageState extends State<DecryptChoosePage> {
-  static const platform = const MethodChannel('com.github.jsavas/decode');
+  final _messageFinder = MessageFinder();
   var _images = <File>[];
   final  _textController = TextEditingController();
   ProgressDialog busyDialog;
@@ -160,7 +161,7 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
 
   Widget _decryptFloatingButton(BuildContext context) {
 
-    Future<void> _showDecodeFailureAlert() async {
+    Future<void> _showFindFailureAlert() async {
       return showDialog<void> (
           context: context,
           barrierDismissible: false,
@@ -184,20 +185,21 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
       if (_isNextEnabled()) {
         busyDialog.show();
 
-        String encryptionKey = EnpictionApp.padEncryptionKey(_textController.text);
-        List<String> filePaths = _images.map((i) => i.path).toList();
-        List<String> decodedMessages = await _decodeImages(filePaths, encryptionKey);
+        List<String> messages = await _messageFinder.findAndValidate(
+            _images.map((i) => i.path).toList(),
+            _textController.text
+        );
 
         await Future.delayed(Duration(seconds: 1)).then((v) {});
         await busyDialog.hide();
 
-        if (decodedMessages == null || decodedMessages.isEmpty) {
-          await _showDecodeFailureAlert();
+        if (messages == null || messages.isEmpty) {
+          await _showFindFailureAlert();
         } else {
           Navigator.pushNamed(
             context,
             DecryptResultPage.routeName,
-            arguments: decodedMessages
+            arguments: messages
           );
         }
       }
@@ -213,20 +215,6 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
           heroTag: null,
         )
     );
-  }
-
-  Future<List<String>> _decodeImages(List<String> filePaths, String encryptionKey) async {
-    final Map<String, Object> arguments = {
-      "filePaths": filePaths,
-      "encryptionKey": encryptionKey
-    };
-
-    try {
-      return platform.invokeListMethod("decodeAndValidate", arguments);
-    } on PlatformException catch (e) {
-      print(e.message);
-      return new List<String>();
-    }
   }
 }
 
