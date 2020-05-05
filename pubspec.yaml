@@ -29,7 +29,8 @@ dependencies:
   steel_crypt: ^1.7.1+1
   uuid: ^2.0.4
   image:
-    path: ./image
+    git:
+      url: git://github.com/jonathansavas/image.git
 
 dev_dependencies:
   test: '>=0.12.42 <2.0.0'

@@ -156,9 +156,11 @@ packages:
   image:
     dependency: "direct main"
     description:
-      path: image
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "9219a1c30eba6333945cfa3eff5638966017a0a8"
+      url: "git://github.com/jonathansavas/image.git"
+    source: git
     version: "2.1.12"
   io:
     dependency: transitive
