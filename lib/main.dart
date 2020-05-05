@@ -31,7 +31,7 @@ class EnpictionApp extends StatelessWidget {
             headline: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold),
             title: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
             body1: TextStyle(fontSize: 14.0, fontFamily: 'Hind'),
-            button: TextStyle(fontSize: 25.0)
+            button: TextStyle(fontSize: 25.0),
           ),
           primarySwatch: Colors.blue,
         ),
@@ -47,11 +47,10 @@ class EnpictionApp extends StatelessWidget {
   }
 
   static void returnHome(BuildContext context) {
-    Navigator.popUntil(context, ModalRoute.withName(Navigator.defaultRouteName));
-  }
-  
-  static String padEncryptionKey(String key) {
-    return key.padRight(16, '0');
+    Navigator.popUntil(
+      context,
+      ModalRoute.withName(Navigator.defaultRouteName),
+    );
   }
 }
 
@@ -74,27 +73,30 @@ class HomePage extends StatelessWidget {
               ),
               SizedBox(height: Theme.of(context).buttonTheme.height),
               RaisedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      EncryptChoosePage.routeName
-                    );
-                  },
-                  child: Text(
-                    'Encrypt',
-                    style: Theme.of(context).textTheme.button.copyWith(color: Colors.white),
-                  ),
+                onPressed: () {
+                  Navigator.pushNamed(context, EncryptChoosePage.routeName);
+                },
+                child: Text(
+                  'Encrypt',
+                  style: Theme.of(context)
+                      .textTheme
+                      .button
+                      .copyWith(color: Colors.white),
                 ),
-              SizedBox(height: Theme.of(context).buttonTheme.height  / 1.5),
+              ),
+              SizedBox(height: Theme.of(context).buttonTheme.height / 1.5),
               RaisedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, DecryptChoosePage.routeName);
-                  },
-                  child: Text(
-                    'Decrypt',
-                    style: Theme.of(context).textTheme.button.copyWith(color: Colors.white),
-                  ),
+                onPressed: () {
+                  Navigator.pushNamed(context, DecryptChoosePage.routeName);
+                },
+                child: Text(
+                  'Decrypt',
+                  style: Theme.of(context)
+                      .textTheme
+                      .button
+                      .copyWith(color: Colors.white),
                 ),
+              ),
             ],
           ),
         ),

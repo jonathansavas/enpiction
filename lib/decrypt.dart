@@ -17,9 +17,9 @@ class DecryptChoosePage extends StatefulWidget {
 }
 
 class DecryptChoosePageState extends State<DecryptChoosePage> {
-  final _messageFinder = MessageFinder();
+  final _msgHider = MessageHider();
   var _images = <File>[];
-  final  _textController = TextEditingController();
+  final _textController = TextEditingController();
   ProgressDialog busyDialog;
 
   @override
@@ -42,7 +42,7 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(title: Text('Decrypt')),
-      body: _mainDecryptPageListView()
+      body: _mainDecryptPageListView(),
     );
   }
 
@@ -60,42 +60,39 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
   }
 
   Widget _imageWidget() {
-    final _imageContainer = _images.length == 0
+    final _imageContainer = (_images.length == 0)
         ? Column(
-        children: <Widget>[
-          SizedBox(height: MediaQuery.of(context).size.height * 0.15),
-          Container(
-              child: FloatingActionButton.extended(
-                onPressed: _getImages,
-                label: Text('Choose images'),
-                backgroundColor: Colors.pink,
-                icon: Icon(Icons.image),
-                heroTag: null,
-              )
-          ),
-          SizedBox(height: MediaQuery.of(context).size.height * 0.10),
-        ]
-    )
+            children: <Widget>[
+              SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+              Container(
+                child: FloatingActionButton.extended(
+                  onPressed: _getImages,
+                  label: Text('Choose images'),
+                  backgroundColor: Colors.pink,
+                  icon: Icon(Icons.image),
+                  heroTag: null,
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.10),
+            ],
+          )
         : GridView.count(
-      primary: false,
-      shrinkWrap: true,
-      padding: EdgeInsets.only(left: 50, right: 50, top: 50),
-      crossAxisCount: 3,
-      mainAxisSpacing: 10.0,
-      crossAxisSpacing: 10.0,
-      children: _buildImageGrid(_images),
-    );
+            primary: false,
+            shrinkWrap: true,
+            padding: EdgeInsets.only(left: 50, right: 50, top: 50),
+            crossAxisCount: 3,
+            mainAxisSpacing: 10.0,
+            crossAxisSpacing: 10.0,
+            children: _buildImageGrid(_images),
+          );
 
     return _imageContainer;
   }
 
   List<Widget> _buildImageGrid(List<File> images) {
-    return images.map(
-            (image) => Container(
-                child: Image.file(
-                    image,
-                    fit: BoxFit.fill
-                ))).toList();
+    return images
+        .map((image) => Container(child: Image.file(image, fit: BoxFit.fill)))
+        .toList();
   }
 
   Future _getImages() async {
@@ -114,56 +111,57 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
 
   Widget _inputKeyField() {
     return Container(
-        padding: EdgeInsets.only(left: 50, right: 50),
-        child: TextField(
-          autofocus: false,
-          controller: _textController,
-          inputFormatters: [WhitelistingTextInputFormatter(RegExp("[\x00-\x7F]"))],
-          keyboardType: TextInputType.multiline,
-          textInputAction: TextInputAction.done,
-          maxLines: null,
-          maxLength: 16,
-          autocorrect: false,
-          textAlign: TextAlign.center,
-          minLines: 1,
-          decoration: InputDecoration(
-              border: OutlineInputBorder(
-              ),
-              hintText: 'Enter your encryption key:'
-          ),
-        )
+      padding: EdgeInsets.only(left: 50, right: 50),
+      child: TextField(
+        autofocus: false,
+        controller: _textController,
+        inputFormatters: [
+          WhitelistingTextInputFormatter(RegExp("[\x00-\x7F]")),
+        ],
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.done,
+        maxLines: null,
+        maxLength: 16,
+        autocorrect: false,
+        textAlign: TextAlign.center,
+        minLines: 1,
+        decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Enter your encryption key:'),
+      ),
     );
   }
 
   Widget _decryptFloatingButton(BuildContext context) {
-
     Future<void> _showFindFailureAlert() async {
-      return showDialog<void> (
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: new Text("Decoding failure"),
-              actions: <Widget>[
-                new FlatButton(
-                    onPressed: () { EnpictionApp.returnHome(context); },
-                    child: new Text("Ok")
-                )
-              ],
-            );
-          }
+      return showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Decryption failure"),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () {
+                  EnpictionApp.returnHome(context);
+                },
+                child: new Text("Ok"),
+              ),
+            ],
+          );
+        },
       );
     }
 
     void buttonAction() async {
-      setState((){});
+      setState(() {});
 
       if (_isNextEnabled()) {
         busyDialog.show();
 
-        List<String> messages = await _messageFinder.findAndValidate(
-            _images.map((i) => i.path).toList(),
-            _textController.text
+        List<String> messages = await _msgHider.findAndValidate(
+          _images.map((i) => i.path).toList(),
+          _textController.text,
         );
 
         await Future.delayed(Duration(seconds: 1)).then((v) {});
@@ -175,21 +173,21 @@ class DecryptChoosePageState extends State<DecryptChoosePage> {
           Navigator.pushNamed(
             context,
             DecryptResultPage.routeName,
-            arguments: messages
+            arguments: messages,
           );
         }
       }
     }
 
     return Container(
-        padding: EdgeInsets.only(left: 50, right: 50),
-        child: FloatingActionButton.extended(
-          onPressed: buttonAction,
-          label: Text('Decrypt'),
-          backgroundColor: Colors.cyan,
-          icon: Icon(Icons.lock_open),
-          heroTag: null,
-        )
+      padding: EdgeInsets.only(left: 50, right: 50),
+      child: FloatingActionButton.extended(
+        onPressed: buttonAction,
+        label: Text('Decrypt'),
+        backgroundColor: Colors.cyan,
+        icon: Icon(Icons.lock_open),
+        heroTag: null,
+      ),
     );
   }
 }
@@ -202,57 +200,61 @@ class DecryptResultPage extends StatelessWidget {
     List<String> results = ModalRoute.of(context).settings.arguments;
 
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Decrypt'),
-          leading: Builder(
-            builder: (BuildContext context) {
-              return IconButton(
-                icon: const Icon(Icons.home),
-                onPressed: () => EnpictionApp.returnHome(context),
-              );
-            },
-          ),
+      appBar: AppBar(
+        title: Text('Decrypt'),
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: const Icon(Icons.home),
+              onPressed: () => EnpictionApp.returnHome(context),
+            );
+          },
         ),
-        body: GridView.count(
-          primary: false,
-          padding: const EdgeInsets.all(20),
-          crossAxisSpacing: 10,
-          crossAxisCount: 2,
-          children: results.map(
-              (res) => _clickToRevealResult(context, results, results.indexOf(res))
-          ).toList(),
-        )
+      ),
+      body: GridView.count(
+        primary: false,
+        padding: const EdgeInsets.all(20),
+        crossAxisSpacing: 10,
+        crossAxisCount: 2,
+        children: results
+            .map((res) =>
+                _clickToRevealResult(context, results, results.indexOf(res)))
+            .toList(),
+      ),
     );
   }
 
-  Widget _clickToRevealResult(BuildContext context, List<String> results, int index) {
-
+  Widget _clickToRevealResult(
+      BuildContext context, List<String> results, int index) {
     Future<void> _revealResult() async {
-      return showDialog<void> (
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: new Text(results.elementAt(index)),
-              actions: <Widget>[
-                new FlatButton(
-                    onPressed: () { Navigator.of(context).pop(); },
-                    child: new Text("Hide")
-                )
-              ],
-            );
-          }
+      return showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: new Text(results.elementAt(index)),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("Hide"),
+              ),
+            ],
+          );
+        },
       );
     }
 
     return Container(
       padding: const EdgeInsets.all(8),
       child: RaisedButton(
-        onPressed: () async { await _revealResult(); },
+        onPressed: () async {
+          await _revealResult();
+        },
         color: Colors.teal[(index + 1) * 100],
         child: Text("Message " + (index + 1).toString()),
       ),
     );
   }
-
 }
