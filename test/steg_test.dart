@@ -2,11 +2,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:enpiction/steganography/crypto.dart';
-import 'package:enpiction/steganography/jpeg_hider.dart';
 import 'package:enpiction/steganography/steg.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:image/image.dart';
+import 'package:image/image.dart' show JpegHider, Image, decodeImage, decodeJpg, JpegData;
 import 'package:uuid/uuid.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Crypto functions', () {
@@ -66,46 +65,5 @@ void main() {
 
     invalid.add(invalidPrefix + messages[3]);
     expect(messageFinder.validateMessageSet(invalid), equals(false));
-  });
-
-  test('Test hide in jpeg', () {
-    String imgPath = 'test/test_jpg.jpg';
-    List<int> imgBytes = File(imgPath).readAsBytesSync();
-    for (int i = 0; i < 50; i++) {
-
-      List<int> withHidden = JpegHider().hideMessage(decodeJpg(imgBytes));
-
-      JpegData jpegA = JpegData()
-        ..read(withHidden);
-      Uint8List msgBytes = Uint8List.fromList('message'.codeUnits);
-
-      List<int> m = [];
-      int b = 0;
-      int bitNum = 0;
-
-      int idx = 2;
-
-      int blockNum = 0;
-      int elemNum = 0;
-      while (m.length < msgBytes.length) {
-        for (int i = 0; i < 3; i++) {
-          int bit = jpegA.frame.components.values
-              .elementAt(i)
-              .blocks
-              .elementAt(blockNum)
-              .elementAt(elemNum)
-              .elementAt(idx) & 1;
-          b = (b << 1) | bit;
-          bitNum++;
-          if (bitNum == 8) {
-            m.add(b);
-            b = 0;
-            bitNum = 0;
-          }
-        }
-        elemNum++;
-      }
-      expect(String.fromCharCodes(m), equals(String.fromCharCodes(msgBytes)));
-    }
   });
 }

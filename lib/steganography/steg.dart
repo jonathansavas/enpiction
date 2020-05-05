@@ -3,11 +3,11 @@ import 'dart:typed_data';
 
 import 'package:path/path.dart' as path;
 import 'package:enpiction/steganography/crypto.dart';
-import 'package:image/image.dart';
+import 'package:image/image.dart' show Image, copyCrop, copyInto, decodeNamedImage, decodePng, encodePng;
 import 'package:uuid/uuid.dart';
 
-const endMessageToken = "#!@";
-const startMessageToken = "@!#";
+const endMessageToken = '`|!';
+const startMessageToken = '!|`';
 const msgByteShifts = [6, 4, 2, 0];
 const channelShifts = [24, 16, 8, 0];
 const _squareBlockSize = 512;
@@ -168,9 +168,6 @@ class MessageHider {
 }
 
 class MessageFinder {
-  final _endTokenBytes = Uint8List.fromList(endMessageToken.codeUnits);
-  final _startTokenBytes = Uint8List.fromList(startMessageToken.codeUnits);
-
   int _shiftIndex;
 
   String findMessage(Image img) {
@@ -208,8 +205,8 @@ class MessageFinder {
         if (_isSearchEnded(msgBytes)) {
           return String.fromCharCodes(
               msgBytes,
-              _startTokenBytes.length,
-              msgBytes.length - _endTokenBytes.length);
+              startMessageToken.length,
+              msgBytes.length - endMessageToken.length);
         } else {
           msgBytes.add(tmp);
           tmp = 0x00;
@@ -221,14 +218,14 @@ class MessageFinder {
   }
 
   bool _isSearchEnded(List<int> msgBytes) {
-    int tokenSize = _endTokenBytes.length;
+    int tokenSize = endMessageToken.length;
     int msgSize = msgBytes.length;
 
     if (msgSize < tokenSize)
       return false;
 
     for (int i = 1; i <= tokenSize; i++) {
-      if (_endTokenBytes[tokenSize - i] != msgBytes[msgSize - i])
+      if (endMessageToken.codeUnitAt(tokenSize - i) != msgBytes[msgSize - i])
         return false;
     }
 
