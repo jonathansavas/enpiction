@@ -15,7 +15,7 @@ class MessageHider {
   static const _jpeg = '.jpeg';
   static final _allowedExtensions = Set.of([_png, _jpg, _jpeg]);
   final _pngHider = PngHider();
-  final _jpegHider = JpegHider();
+  final _jpegHider = JpegHider(quality: 85);
 
   Future<bool> hideMessagesInFiles(Iterable<MapEntry<String, String>> pathsToMessages, String key) async {
     if (pathsToMessages == null)
