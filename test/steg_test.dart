@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:enpiction/steganography/crypto.dart';
 import 'package:enpiction/steganography/png_hider.dart';
@@ -18,7 +19,7 @@ void main() {
 
   test('Split/merge image functions', () {
     var pngHider = PngHider();
-    Image img = decodeImage(File('test/clean_image.png').readAsBytesSync());
+    Image img = decodeImage(File('test/res/android_screenshot.png').readAsBytesSync());
 
     Image after = pngHider.mergeImages(pngHider.splitImage(img), img.width, img.height);
 
@@ -30,7 +31,7 @@ void main() {
   test('Hide/find messages in PNG', () {
     var pngHider = PngHider();
     String message = 'messagefkgjkjg8*&845jk';
-    Image img = decodeImage(File('test/clean_image.png').readAsBytesSync());
+    Image img = decodeImage(File('test/res/android_screenshot.png').readAsBytesSync());
 
     expect(pngHider.findMessage(pngHider.hideMessage(img, message)), equals(message));
   });
@@ -41,7 +42,7 @@ void main() {
     String message = 'msgxyz65*&';
     int expectedChanges = ((message.length + tokLengths[0] + tokLengths[1]) * 4 / 3).ceil();
 
-    Image img = decodeImage(File('test/clean_image.png').readAsBytesSync());
+    Image img = decodeImage(File('test/res/android_screenshot.png').readAsBytesSync());
     Image after = decodePng(pngHider.hideMessage(img, message));
 
     int numChanges = 0;
@@ -71,5 +72,34 @@ void main() {
 
     invalid.add(invalidPrefix + messages[3]);
     expect(msgHider.validateMessageSet(invalid), equals(false));
+  });
+
+  test('File sizes', () {
+    var msg = "let's hide this test message within the images we are testing to determine the file sizes after compressing with hidden data!!";
+
+    var pngs = ['fb_icon_325x325.png', 'android_screenshot.png', 'large-png-img.png'];
+    var pngHider = PngHider();
+
+    for (String png in pngs) {
+      Uint8List bytes = File('test/res/$png').readAsBytesSync();
+      print('$png without hidden: ' + bytes.length.toString() + ' bytes');
+      print('$png with    hidden: ' + pngHider.hideMessage(PngDecoder().decodeImage(bytes), msg).length.toString() + ' bytes');
+      print('\n');
+    }
+
+    var jpegs = ['fb_screenshot.jpg', 'minnewaska.jpg', 'waterfall.jpg'];
+    var jpegHider = JpegHider();
+
+    var qualities = [50, 60, 70, 80, 90, 100];
+
+    for (String jpeg in jpegs) {
+      Uint8List bytes = File('test/res/$jpeg').readAsBytesSync();
+      print('$jpeg without hidden     : ' + bytes.length.toString() + ' bytes');
+      for (int qual in qualities) {
+        jpegHider.setQuality(qual);
+        print('$jpeg with hidden qual $qual: ' + jpegHider.hideMessage(JpegDecoder().decodeImage(bytes), msg).length.toString() + ' bytes');
+      }
+      print('\n');
+    }
   });
 }
